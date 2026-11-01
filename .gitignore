@@ -1,14 +1,12 @@
 *.iml
-.gradle
-/.gradle
-/build
+.gradle/
+build/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
 *.keystore
 *.jks
-!**/src/main/assets/**/*.keystore
 .DS_Store
 *.log
 *.hprof

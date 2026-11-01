@@ -26,12 +26,16 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 // --- Color & Typography shortcuts ---
 val bgPrimary = allora.am.ui.theme.BackgroundPrimary
@@ -104,12 +108,25 @@ fun ArtworkPlaceholder(
             .border(0.6.dp, Color.White.copy(alpha = 0.22f), shape),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.MusicNote,
-            contentDescription = contentDescription,
-            tint = Color.White.copy(alpha = 0.92f),
-            modifier = Modifier.size(32.dp)
-        )
+        if (!url.isNullOrBlank() && (url.startsWith("http://") || url.startsWith("https://"))) {
+            val context = LocalContext.current
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(url)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Default.MusicNote,
+                contentDescription = contentDescription,
+                tint = Color.White.copy(alpha = 0.92f),
+                modifier = Modifier.size(32.dp)
+            )
+        }
     }
 }
 

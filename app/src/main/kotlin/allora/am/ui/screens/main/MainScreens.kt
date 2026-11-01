@@ -1,6 +1,8 @@
 package allora.am.ui.screens.main
 
 import allora.am.data.MockData
+import allora.am.data.MusicRepository
+import kotlinx.coroutines.delay
 import allora.am.model.Genre
 import allora.am.model.Song
 import allora.am.ui.components.*
@@ -290,6 +292,25 @@ fun SearchScreen(
     modifier: Modifier = Modifier
 ) {
     var query by remember { mutableStateOf("") }
+    var results by remember { mutableStateOf<List<Song>>(emptyList()) }
+    var searching by remember { mutableStateOf(false) }
+
+    LaunchedEffect(query) {
+        val trimmed = query.trim()
+        if (trimmed.length >= 2) {
+            searching = true
+            delay(350)
+            results = try {
+                MusicRepository.searchSongs(trimmed)
+            } catch (_: Exception) {
+                emptyList()
+            }
+            searching = false
+        } else {
+            results = emptyList()
+            searching = false
+        }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -304,24 +325,42 @@ fun SearchScreen(
             )
         }
 
-        item { SectionHeader(title = "Recent Searches", onSeeAll = { onNavigate(allora.am.ui.navigation.Screen.SearchResults) }) }
-        items(MockData.songs.take(3)) { song ->
-            SongItem(song, onClick = { onSongClick(song) }, modifier = Modifier.padding(horizontal = 16.dp))
-        }
+        if (query.isBlank()) {
+            item { SectionHeader(title = "Recent Searches", onSeeAll = { onNavigate(allora.am.ui.navigation.Screen.SearchResults) }) }
+            items(MockData.songs.take(3)) { song ->
+                SongItem(song, onClick = { onSongClick(song) }, modifier = Modifier.padding(horizontal = 16.dp))
+            }
 
-        item { SectionHeader(title = "Trending Searches") }
-        items(listOf("Pop Hits 2024", "Bollywood Best", "Punjabi Beats", "Lo-Fi Study")) { term ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .clickable { query = term }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = textMuted, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(text = term, style = tArtist, color = textMain)
+            item { SectionHeader(title = "Trending Searches") }
+            items(listOf("Pop Hits 2024", "Bollywood Best", "Punjabi Beats", "Lo-Fi Study")) { term ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clickable { query = term }
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.TrendingUp, contentDescription = null, tint = textMuted, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(text = term, style = tArtist, color = textMain)
+                }
+            }
+        } else {
+            item { SectionHeader(title = if (searching) "Searching YouTube Music…" else "Songs") }
+            if (!searching && results.isEmpty()) {
+                item {
+                    Text(
+                        text = "No results for \"$query\"",
+                        style = tArtist,
+                        color = textMuted,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            } else {
+                items(results) { song ->
+                    SongItem(song, onClick = { onSongClick(song) }, modifier = Modifier.padding(horizontal = 16.dp))
+                }
             }
         }
     }

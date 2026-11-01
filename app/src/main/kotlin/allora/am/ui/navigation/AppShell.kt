@@ -1,6 +1,9 @@
 package allora.am.ui.navigation
 
 import allora.am.data.MockData
+import allora.am.data.MusicRepository
+import allora.am.model.Song
+import allora.am.playback.MusicPlayer
 import allora.am.ui.components.MiniPlayer
 import allora.am.ui.components.BottomNavBar
 import allora.am.ui.screens.library.*
@@ -15,10 +18,12 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 private val onboardingScreens = setOf(
@@ -47,6 +52,14 @@ fun AppShell(
 ) {
     val nav = navigation
     val screen = nav.currentScreen
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) { MusicRepository.bootstrap() }
+
+    val play: (Song) -> Unit = { song ->
+        nav.playSong(song)
+        MusicPlayer.play(context, song)
+    }
 
     Box(
         modifier = modifier
@@ -84,16 +97,16 @@ fun AppShell(
             // Main tabs
             Screen.Home -> HomeScreen(
                 onNavigate = { nav.navigateTo(it) },
-                onSongClick = { nav.playSong(it) }
+                onSongClick = { play(it) }
             )
             Screen.Explore -> ExploreScreen(onNavigate = { nav.navigateTo(it) })
             Screen.Search -> SearchScreen(
-                onSongClick = { nav.playSong(it) },
+                onSongClick = { play(it) },
                 onNavigate = { nav.navigateTo(it) }
             )
             Screen.SearchResults -> SearchResultsScreen(
                 query = "music",
-                onSongClick = { nav.playSong(it) },
+                onSongClick = { play(it) },
                 onNavigate = { nav.navigateTo(it) }
             )
 
@@ -101,9 +114,9 @@ fun AppShell(
             Screen.FullScreenPlayer -> FullScreenPlayerScreen(
                 song = nav.fullScreenPlayerSong ?: MockData.songs.firstOrNull(),
                 onClose = { nav.navigateTo(Screen.Home) },
-                onPlayPause = {},
-                onPrevious = {},
-                onNext = {},
+                onPlayPause = { MusicPlayer.toggle() },
+                onPrevious = { MusicPlayer.previous(context) },
+                onNext = { MusicPlayer.next(context) },
                 onShuffle = {},
                 onRepeat = {},
                 onQueue = { nav.navigateTo(Screen.Queue) },
@@ -118,16 +131,16 @@ fun AppShell(
             Screen.Queue -> QueueScreen(
                 onClose = { nav.navigateTo(Screen.FullScreenPlayer) },
                 onClear = {},
-                onSongClick = { nav.playSong(it) }
+                onSongClick = { play(it) }
             )
 
             // Library
             Screen.Library -> LibraryScreen(
                 onNavigate = { nav.navigateTo(it) },
-                onSongClick = { nav.playSong(it) }
+                onSongClick = { play(it) }
             )
             Screen.FavoriteSongs -> FavoriteSongsScreen(
-                onSongClick = { nav.playSong(it) },
+                onSongClick = { play(it) },
                 onPlayAll = {},
                 onShuffleAll = {}
             )
@@ -136,7 +149,7 @@ fun AppShell(
                 onPlayAll = {},
                 onShuffleAll = {},
                 onDownload = {},
-                onSongClick = { nav.playSong(it) }
+                onSongClick = { play(it) }
             )
             Screen.CreatePlaylist -> CreatePlaylistScreen(
                 onClose = { nav.navigateTo(Screen.Library) },
@@ -155,18 +168,18 @@ fun AppShell(
                 onPlayAll = {},
                 onShuffleAll = {},
                 onSave = {},
-                onSongClick = { nav.playSong(it) }
+                onSongClick = { play(it) }
             )
             Screen.ArtistDetails -> ArtistDetailsScreen(
                 onClose = { nav.navigateTo(Screen.Library) },
                 onFollow = {},
                 onPlayAll = {},
                 onShuffleAll = {},
-                onSongClick = { nav.playSong(it) }
+                onSongClick = { play(it) }
             )
             Screen.Downloads -> DownloadsScreen(
                 onNavigate = { nav.navigateTo(it) },
-                onSongClick = { nav.playSong(it) }
+                onSongClick = { play(it) }
             )
 
             // Radio
@@ -178,15 +191,15 @@ fun AppShell(
             Screen.MoodMoments -> MoodMomentsScreen(onNavigate = { nav.navigateTo(it) })
             Screen.GenreDetails -> GenreDetailsScreen(
                 onClose = { nav.navigateTo(Screen.Explore) },
-                onSongClick = { nav.playSong(it) }
+                onSongClick = { play(it) }
             )
-            Screen.Charts -> ChartsScreen(onSongClick = { nav.playSong(it) })
+            Screen.Charts -> ChartsScreen(onSongClick = { play(it) })
 
             // Profile
             Screen.Profile -> ProfileScreen(
                 onNavigate = { nav.navigateTo(it) },
                 onEditProfile = { nav.navigateTo(Screen.EditProfile) },
-                onSongClick = { nav.playSong(it) }
+                onSongClick = { play(it) }
             )
             Screen.EditProfile -> EditProfileScreen(
                 onClose = { nav.navigateTo(Screen.Profile) },
@@ -205,9 +218,9 @@ fun AppShell(
             Screen.PlayerMoreOptions -> FullScreenPlayerScreen(
                 song = nav.fullScreenPlayerSong ?: MockData.songs.firstOrNull(),
                 onClose = { nav.navigateTo(Screen.Home) },
-                onPlayPause = {},
-                onPrevious = {},
-                onNext = {},
+                onPlayPause = { MusicPlayer.toggle() },
+                onPrevious = { MusicPlayer.previous(context) },
+                onNext = { MusicPlayer.next(context) },
                 onShuffle = {},
                 onRepeat = {},
                 onQueue = { nav.navigateTo(Screen.Queue) },
@@ -228,8 +241,8 @@ fun AppShell(
                     nav.miniPlayerSong?.let { song ->
                         MiniPlayer(
                             song = song,
-                            onPlayPause = {},
-                            onNext = {},
+                            onPlayPause = { MusicPlayer.toggle() },
+                            onNext = { MusicPlayer.next(context) },
                             onExpand = { nav.navigateTo(Screen.FullScreenPlayer) },
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                         )

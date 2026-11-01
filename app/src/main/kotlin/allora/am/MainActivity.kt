@@ -5,10 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import allora.am.ui.navigation.AppShell
-import allora.am.ui.navigation.AppNavigation
 import allora.am.ui.navigation.rememberAppNavigation
 import allora.am.ui.theme.MusicAppTheme
 
@@ -18,11 +18,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MusicAppTheme {
-                val navigation = rememberAppNavigation()
-                AppShell(
-                    navigation = navigation,
-                    modifier = Modifier.fillMaxSize()
-                )
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    val navigation = rememberAppNavigation()
+                    AppShell(
+                        navigation = navigation,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }

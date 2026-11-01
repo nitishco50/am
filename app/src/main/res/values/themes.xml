@@ -1,3 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.ComposeEmptyActivity" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.ComposeEmptyActivity" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/app_background</item>
+        <item name="android:statusBarColor">@color/app_background</item>
+        <item name="android:navigationBarColor">@color/app_background</item>
+        <item name="android:colorAccent">@color/app_accent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
 </resources>

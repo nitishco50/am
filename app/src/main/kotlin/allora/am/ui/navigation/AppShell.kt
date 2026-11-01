@@ -3,6 +3,7 @@ package allora.am.ui.navigation
 import allora.am.data.MockData
 import allora.am.ui.components.MiniPlayer
 import allora.am.ui.components.BottomNavBar
+import allora.am.ui.components.bgPrimary
 import allora.am.ui.screens.library.*
 import allora.am.ui.screens.main.*
 import allora.am.ui.screens.onboarding.*
@@ -12,6 +13,7 @@ import allora.am.ui.screens.radio.*
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -45,7 +47,7 @@ fun AppShell(
     val nav = navigation
     val screen = nav.currentScreen
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().background(bgPrimary)) {
         when (screen) {
             // Onboarding
             Screen.Splash -> SplashScreen(onFinish = { nav.navigateTo(Screen.Welcome) })

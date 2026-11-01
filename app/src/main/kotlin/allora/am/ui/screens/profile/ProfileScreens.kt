@@ -3,17 +3,32 @@ package allora.am.ui.screens.profile
 import allora.am.data.MockData
 import allora.am.model.Song
 import allora.am.ui.components.*
-import allora.am.ui.navigation.*
+import allora.am.ui.navigation.Screen
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.coil.AsyncImage
+import androidx.compose.ui.unit.sp
 
 // --- Screen 29: Profile ---
 @Composable
@@ -25,121 +40,102 @@ fun ProfileScreen(
 ) {
     val user = MockData.currentUser
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
-            .verticalScroll(rememberScrollState())
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        // Profile header
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier.size(100.dp).clip(CircleShape).background(surfaceElevated),
-                contentAlignment = Alignment.Center
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.End
             ) {
-                AsyncImage(
-                    model = user.avatarUrl,
-                    contentDescription = user.name,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        androidx.compose.material3.Icon(
-                            imageVector = androidx.compose.material3.Icons.Default.Person,
-                            contentDescription = null,
-                            tint = textSecondary,
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
+                IconButton(onClick = { onNavigate(Screen.Settings) }) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = textSecondary)
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(text = user.name, style = tHeadline, color = textMain)
-            Text(text = "@${user.username}", style = tArtist, color = textSecondary)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = onEditProfile,
-                colors = ButtonDefaults.buttonColors(containerColor = surfaceElevated),
-                modifier = Modifier.height(40.dp)
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Edit Profile", color = textMain)
+                Box(
+                    modifier = Modifier.size(100.dp).clip(CircleShape).background(surfaceElevated),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Person, contentDescription = "Avatar", tint = textSecondary, modifier = Modifier.size(48.dp))
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = user.name, style = tHeadline, color = textMain)
+                Text(text = "@${user.username}", style = tArtist, color = textSecondary)
+                if (user.isPremium) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PremiumBadge()
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedButton(
+                    onClick = onEditProfile,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = textMain)
+                ) {
+                    Text("Edit Profile")
+                }
             }
         }
 
-        // Stats
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            StatCard("124", "Playlists")
-            StatCard("8.5K", "Minutes Listened")
-            StatCard("42", "Artists Followed")
-        }
-
-        // Recently played
-        SectionHeader(title = "Recently Played", onSeeAll = { onNavigate(Screen.ListeningHistory) })
-
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-        ) {
-            items(MockData.recentSongs.indexed) { (index, song) ->
-                SongItem(song, index = index, onClick = { onSongClick(song) })
-                if (index < MockData.recentSongs.size - 1) ListDivider()
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatCard("124", "Playlists", Modifier.weight(1f))
+                StatCard("8.5K", "Minutes", Modifier.weight(1f))
+                StatCard("42", "Following", Modifier.weight(1f))
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        item { SectionHeader(title = "Recently Played", onSeeAll = { onNavigate(Screen.ListeningHistory) }) }
+        items(MockData.recentSongs) { song ->
+            SongItem(song, onClick = { onSongClick(song) }, modifier = Modifier.padding(horizontal = 16.dp))
+        }
 
-        // Favorite artists
-        SectionHeader(title = "Favorite Artists", onSeeAll = { onNavigate(Screen.Library) })
-
-        LazyRow(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(MockData.artists.take(4)) { artist ->
-                ArtistCard(artist, onClick = { onNavigate(Screen.ArtistDetails) })
+        item { SectionHeader(title = "Favorite Artists") }
+        item {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(MockData.artists) { artist ->
+                    ArtistCard(artist, onClick = { onNavigate(Screen.ArtistDetails) })
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Public playlists
-        SectionHeader(title = "Public Playlists", onSeeAll = { onNavigate(Screen.Library) })
-
-        LazyRow(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(MockData.playlists.take(3)) { playlist ->
-                PlaylistCard(playlist, onClick = { onNavigate(Screen.PlaylistDetails) })
+        item { SectionHeader(title = "My Playlists", onSeeAll = { onNavigate(Screen.Library) }) }
+        item {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(MockData.playlists) { playlist ->
+                    PlaylistCard(playlist, onClick = { onNavigate(Screen.PlaylistDetails) })
+                }
             }
         }
-
-        Spacer(modifier = Modifier.height(100.dp))
     }
 }
 
 @Composable
-private fun StatCard(value: String, label: String) {
+private fun StatCard(value: String, label: String, modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier
-            .weight(1f)
-            .padding(16.dp)
-            .background(surfaceElevated, shape = RoundedCornerShape(16.dp)),
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(surfaceElevated)
+            .padding(vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = value, style = tSection, color = textMain)
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = label, style = tArtist, color = textSecondary)
+        Text(text = label, style = tNavLabel, color = textSecondary)
     }
 }
 
@@ -155,21 +151,15 @@ fun EditProfileScreen(
     var bio by remember { mutableStateOf("Music lover & explorer") }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
+        modifier = modifier.fillMaxSize().background(bgPrimary).padding(16.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 40.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onClose) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.ArrowDownward,
-                    contentDescription = null,
-                    tint = textMain
-                )
+                Icon(Icons.Default.Close, contentDescription = "Close", tint = textMain)
             }
             Text(text = "Edit Profile", style = tSection, color = textMain)
             TextButton(onClick = onSave) {
@@ -177,91 +167,53 @@ fun EditProfileScreen(
             }
         }
 
-        // Profile image
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
                 modifier = Modifier.size(100.dp).clip(CircleShape).background(surfaceElevated),
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = MockData.currentUser.avatarUrl,
-                    contentDescription = "Profile",
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        androidx.compose.material3.Icon(
-                            imageVector = androidx.compose.material3.Icons.Default.Person,
-                            contentDescription = null,
-                            tint = textSecondary,
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
-                }
+                Icon(Icons.Default.Person, contentDescription = "Avatar", tint = textSecondary, modifier = Modifier.size(48.dp))
             }
-            Spacer(modifier = Modifier.height(12.dp))
             TextButton(onClick = {}) {
-                Text("Change photo", style = tArtist, color = textSecondary)
+                Text("Change photo", style = tArtist, color = accentSecondary)
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text(text = "Name", style = tArtist, color = textSecondary)
-            Spacer(modifier = Modifier.height(8.dp))
-            BasicTextField(
-                value = name,
-                onValueChange = { name = it },
-                textStyle = TextStyle(color = textMain, fontSize = 18.sp),
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                decorationBox = { inner ->
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterVertically) {
-                        inner(modifier = Modifier.padding(horizontal = 16.dp))
-                    }
-                }
-            )
-        }
-
+        ProfileField(label = "Name", value = name, onValueChange = { name = it })
         Spacer(modifier = Modifier.height(16.dp))
-
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text(text = "Username", style = tArtist, color = textSecondary)
-            Spacer(modifier = Modifier.height(8.dp))
-            BasicTextField(
-                value = username,
-                onValueChange = { username = it },
-                textStyle = TextStyle(color = textMain, fontSize = 18.sp),
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                decorationBox = { inner ->
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterVertically) {
-                        inner(modifier = Modifier.padding(horizontal = 16.dp))
-                    }
-                }
-            )
-        }
-
+        ProfileField(label = "Username", value = username, onValueChange = { username = it })
         Spacer(modifier = Modifier.height(16.dp))
+        ProfileField(label = "Bio", value = bio, onValueChange = { bio = it }, height = 96.dp)
+    }
+}
 
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text(text = "Bio", style = tArtist, color = textSecondary)
-            Spacer(modifier = Modifier.height(8.dp))
+@Composable
+private fun ProfileField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    height: androidx.compose.ui.unit.Dp = 52.dp
+) {
+    Column {
+        Text(text = label, style = tArtist, color = textSecondary)
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(height)
+                .background(surfaceElevated, shape = RoundedCornerShape(12.dp))
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            contentAlignment = Alignment.TopStart
+        ) {
             BasicTextField(
-                value = bio,
-                onValueChange = { bio = it },
+                value = value,
+                onValueChange = onValueChange,
                 textStyle = TextStyle(color = textMain, fontSize = 16.sp),
-                modifier = Modifier.fillMaxWidth().height(96.dp),
-                decorationBox = { inner ->
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
-                        inner(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
-                    }
-                }
+                modifier = Modifier.fillMaxWidth()
             )
         }
-
-        Spacer(modifier = Modifier.height(80.dp))
     }
 }
 
@@ -271,117 +223,78 @@ fun SettingsScreen(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(top = 40.dp, bottom = 100.dp)
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Account section
-            item {
-                SectionHeader(title = "Account", modifier = Modifier.padding(horizontal = 16.dp, top = 16.dp, bottom = 8.dp))
-            }
-            item {
-                SettingsRow("Profile", Icons.Default.Person, { onNavigate(Screen.EditProfile) })
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Subscription", Icons.Default.AttachMoney, { onNavigate(Screen.Subscription) })
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Privacy", Icons.Default.Lock, {})
-            }
-
-            // Playback section
-            item {
-                SectionHeader(title = "Playback", modifier = Modifier.padding(horizontal = 16.dp, top = 24.dp, bottom = 8.dp))
-            }
-            item {
-                SettingsRow("Audio Quality", Icons.Default.SurroundSound, { onNavigate(Screen.AudioQuality) })
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Equalizer", Icons.Default.Equalizer, { onNavigate(Screen.Equalizer) })
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Crossfade", Icons.Default.Tune, {})
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Gapless Playback", Icons.Default.SkipNext, {})
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Autoplay", Icons.Default.Repeat, {})
-            }
-
-            // Appearance section
-            item {
-                SectionHeader(title = "Appearance", modifier = Modifier.padding(horizontal = 16.dp, top = 24.dp, bottom = 8.dp))
-            }
-            item {
-                SettingsRow("Dark Theme", Icons.Default.DarkMode, {})
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Accent Color", Icons.Default.ColorLens, {})
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Dynamic Artwork", Icons.Default.Image, {})
-            }
-
-            // Storage section
-            item {
-                SectionHeader(title = "Storage", modifier = Modifier.padding(horizontal = 16.dp, top = 24.dp, bottom = 8.dp))
-            }
-            item {
-                SettingsRow("Download Quality", Icons.Default.Download, {})
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Storage Usage", Icons.Default.Storage, {})
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Clear Cache", Icons.Default.Delete, {})
-            }
-
-            // Other section
-            item {
-                SectionHeader(title = "Other", modifier = Modifier.padding(horizontal = 16.dp, top = 24.dp, bottom = 8.dp))
-            }
-            item {
-                SettingsRow("Notifications", Icons.Default.Notifications, { onNavigate(Screen.Notifications) })
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Language", Icons.Default.Language, {})
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("About", Icons.Default.Info, {})
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Help", Icons.Default.Help, { onNavigate(Screen.HelpSupport) })
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Privacy Policy", Icons.Default.Description, {})
-                Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-                SettingsRow("Terms of Service", Icons.Default.Description, {})
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { onNavigate(Screen.Profile) }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = textMain)
+                }
+                Text(text = "Settings", style = tSection, color = textMain)
             }
         }
 
-        Spacer(modifier = Modifier.height(80.dp))
+        item { SectionHeader(title = "Account") }
+        item {
+            SettingsRow("Profile", Icons.Default.Person) { onNavigate(Screen.EditProfile) }
+            SettingsRow("Subscription", Icons.Default.Star) { onNavigate(Screen.Subscription) }
+            SettingsRow("Privacy", Icons.Default.Lock) {}
+        }
+
+        item { SectionHeader(title = "Playback") }
+        item {
+            SettingsRow("Audio Quality", Icons.Default.SurroundSound) { onNavigate(Screen.AudioQuality) }
+            SettingsRow("Equalizer", Icons.Default.Equalizer) { onNavigate(Screen.Equalizer) }
+            SettingsRow("Crossfade", Icons.Default.Tune) {}
+            SettingsRow("Gapless Playback", Icons.Default.SkipNext) {}
+            SettingsRow("Autoplay", Icons.Default.Repeat) {}
+        }
+
+        item { SectionHeader(title = "Appearance") }
+        item {
+            SettingsRow("Dark Theme", Icons.Default.DarkMode) {}
+            SettingsRow("Accent Color", Icons.Default.ColorLens) {}
+            SettingsRow("Dynamic Artwork", Icons.Default.Image) {}
+        }
+
+        item { SectionHeader(title = "Storage") }
+        item {
+            SettingsRow("Download Quality", Icons.Default.Download) {}
+            SettingsRow("Storage Usage", Icons.Default.Storage) {}
+            SettingsRow("Clear Cache", Icons.Default.Delete) {}
+        }
+
+        item { SectionHeader(title = "Other") }
+        item {
+            SettingsRow("Notifications", Icons.Default.Notifications) { onNavigate(Screen.Notifications) }
+            SettingsRow("Language", Icons.Default.Language) {}
+            SettingsRow("About", Icons.Default.Info) {}
+            SettingsRow("Help", Icons.Default.Help) { onNavigate(Screen.HelpSupport) }
+            SettingsRow("Privacy Policy", Icons.Default.Description) {}
+            SettingsRow("Terms of Service", Icons.Default.Description) {}
+        }
     }
 }
 
 @Composable
-private fun SettingsRow(
-    title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit
-) {
+private fun SettingsRow(title: String, icon: ImageVector, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
-            .clickable { onClick() },
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        androidx.compose.material3.Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = textSecondary,
-            modifier = Modifier.size(20.dp)
-        )
+        Icon(icon, contentDescription = null, tint = textSecondary, modifier = Modifier.size(20.dp))
         Spacer(modifier = Modifier.width(16.dp))
-        Text(text = title, style = tArtist, color = textMain)
-        Spacer(modifier = Modifier.weight(1f))
-        androidx.compose.material3.Icon(
-            imageVector = androidx.compose.material3.Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = textMuted,
-            modifier = Modifier.size(18.dp)
-        )
+        Text(text = title, style = tArtist, color = textMain, modifier = Modifier.weight(1f))
+        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = textMuted, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -391,100 +304,68 @@ fun AudioQualityScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var streamingQuality by remember { mutableStateOf("High") }
-    var downloadQuality by remember { mutableStateOf("High") }
+    val qualities = listOf("Low", "Normal", "High", "Very High")
+    var streaming by remember { mutableStateOf("High") }
+    var download by remember { mutableStateOf("High") }
     var dataSaver by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
+        modifier = modifier.fillMaxSize().background(bgPrimary).padding(16.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 40.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onClose) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.ArrowDownward,
-                    contentDescription = null,
-                    tint = textMain
-                )
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = textMain)
             }
             Text(text = "Audio Quality", style = tSection, color = textMain)
         }
 
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text(text = "Streaming Quality", style = tArtist, color = textSecondary)
-            Spacer(modifier = Modifier.height(8.dp))
-            DropdownMenu(
-                expanded = true,
-                onDismissRequest = {},
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                listOf("Low", "Normal", "High", "Very High").forEach { quality ->
-                    DropdownMenuItem(
-                        text = { Text(text = quality, style = tArtist) },
-                        onClick = { streamingQuality = quality }
-                    )
-                }
-            }
-            Text(
-                text = streamingQuality,
-                style = tSongTitle,
-                color = textMain,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-            )
+        Text(text = "Streaming Quality", style = tArtist, color = textSecondary)
+        Spacer(modifier = Modifier.height(8.dp))
+        qualities.forEach { q ->
+            OptionRow(text = q, selected = q == streaming, onClick = { streaming = q })
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text(text = "Download Quality", style = tArtist, color = textSecondary)
-            Spacer(modifier = Modifier.height(8.dp))
-            DropdownMenu(
-                expanded = true,
-                onDismissRequest = {},
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                listOf("Low", "Normal", "High", "Very High").forEach { quality ->
-                    DropdownMenuItem(
-                        text = { Text(text = quality, style = tArtist) },
-                        onClick = { downloadQuality = quality }
-                    )
-                }
-            }
-            Text(
-                text = downloadQuality,
-                style = tSongTitle,
-                color = textMain,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-            )
+        Text(text = "Download Quality", style = tArtist, color = textSecondary)
+        Spacer(modifier = Modifier.height(8.dp))
+        qualities.forEach { q ->
+            OptionRow(text = q, selected = q == download, onClick = { download = q })
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(
                 checked = dataSaver,
                 onCheckedChange = { dataSaver = it },
-                colors = CheckboxDefaults.colors(
-                    checkmarkColor = Color.White,
-                    uncheckedColor = surfaceElevated,
-                    checkedColor = accentPrimary
-                )
+                colors = SwitchDefaults.colors(checkedTrackColor = accentPrimary)
             )
+            Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(text = "Data Saver", style = tSongTitle, color = textMain)
-                Text(text = "Reduces audio quality to save data", style = tArtist, color = textSecondary)
+                Text(text = "Reduce audio quality to save data", style = tArtist, color = textSecondary)
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(80.dp))
+@Composable
+private fun OptionRow(text: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clickable { onClick() },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = text, style = tSongTitle, color = if (selected) accentPrimary else textMain, modifier = Modifier.weight(1f))
+        if (selected) {
+            Icon(Icons.Default.Check, contentDescription = null, tint = accentPrimary, modifier = Modifier.size(20.dp))
+        }
     }
 }
 
@@ -494,140 +375,110 @@ fun EqualizerScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedPreset by remember { mutableStateOf("Flat") }
     val presets = listOf("Flat", "Bass Boost", "Rock", "Pop", "Jazz", "Classical", "Vocal")
+    var selectedPreset by remember { mutableStateOf("Flat") }
+    val bands = listOf("60Hz", "150Hz", "400Hz", "1kHz", "2.4kHz", "6kHz", "15kHz")
+    val levels = remember { mutableStateListOf(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f) }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
+        modifier = modifier.fillMaxSize().background(bgPrimary).padding(16.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 40.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onClose) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.ArrowDownward,
-                    contentDescription = null,
-                    tint = textMain
-                )
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = textMain)
             }
             Text(text = "Equalizer", style = tSection, color = textMain)
         }
 
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text(text = "Preset", style = tArtist, color = textSecondary)
-            Spacer(modifier = Modifier.height(8.dp))
-            DropdownMenu(
-                expanded = true,
-                onDismissRequest = {},
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                presets.forEach { preset ->
-                    DropdownMenuItem(
-                        text = { Text(text = preset, style = tArtist) },
-                        onClick = { selectedPreset = preset }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(presets) { preset ->
+                FilterChip(
+                    selected = preset == selectedPreset,
+                    onClick = { selectedPreset = preset },
+                    label = { Text(preset, style = tArtist, color = if (preset == selectedPreset) Color.White else textSecondary) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = if (preset == selectedPreset) accentPrimary else surfaceElevated
                     )
-                }
-            }
-            Text(
-                text = selectedPreset,
-                style = tSongTitle,
-                color = textMain,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Equalizer visualization
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .background(surfaceElevated, shape = RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.BottomCenter
-            ) {
-                repeat(8) { i ->
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height((40 + (i * 15)).dp)
-                            .background(accentPrimary, shape = RoundedCornerShape(4.dp))
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Frequency sliders
-        listOf("60 Hz", "150 Hz", "400 Hz", "1K Hz", "2.4K Hz", "6K Hz", "15K Hz").forEachIndexed { index, freq ->
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = freq, style = tNavLabel, color = textSecondary)
-                    Text(text = "0 dB", style = tNavLabel, color = textSecondary)
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Slider(
-                    value = 0.5f,
-                    onValueChange = {},
-                    valueRange = 0f..1f,
-                    colors = SliderDefaults.colors(
-                        activeTrackColor = accentPrimary,
-                        inactiveTrackColor = divider,
-                        thumbColor = accentPrimary
-                    ),
-                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(surfaceElevated)
+                .padding(16.dp),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Button(
-                onClick = {},
-                colors = ButtonDefaults.buttonColors(containerColor = surfaceElevated),
-                modifier = Modifier.weight(1f).height(40.dp)
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Bottom
             ) {
-                Text("Bass Boost", color = textMain)
-            }
-            Button(
-                onClick = {},
-                colors = ButtonDefaults.buttonColors(containerColor = surfaceElevated),
-                modifier = Modifier.weight(1f).height(40.dp)
-            ) {
-                Text("Virtualizer", color = textMain)
+                levels.forEach { level ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(level)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(accentPrimary)
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = {},
-            colors = ButtonDefaults.buttonColors(containerColor = surfaceElevated),
-            modifier = Modifier.fillMaxWidth().height(40.dp)
-        ) {
-            Text("Reset", color = textMain)
+        bands.forEachIndexed { index, band ->
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(text = band, style = tNavLabel, color = textSecondary)
+                    Text(text = "${((levels[index] - 0.5f) * 24).toInt()} dB", style = tNavLabel, color = textSecondary)
+                }
+                Slider(
+                    value = levels[index],
+                    onValueChange = { levels[index] = it },
+                    colors = SliderDefaults.colors(
+                        thumbColor = accentPrimary,
+                        activeTrackColor = accentPrimary,
+                        inactiveTrackColor = divider
+                    )
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(80.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+                onClick = {},
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = textMain),
+                modifier = Modifier.weight(1f)
+            ) { Text("Bass Boost") }
+            OutlinedButton(
+                onClick = {},
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = textMain),
+                modifier = Modifier.weight(1f)
+            ) { Text("Virtualizer") }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedButton(
+            onClick = { for (i in levels.indices) levels[i] = 0.5f },
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = textMain),
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Reset") }
     }
 }
 
@@ -638,159 +489,110 @@ fun SubscriptionScreen(
     onUpgrade: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        // Premium hero banner
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .background(
-                    androidx.compose.ui.graphics.Brush.linearGradient(
-                        colors = listOf(accentPrimary, accentSecondary),
-                        start = Alignment.TopLeft,
-                        end = Alignment.BottomRight
-                    ),
-                    shape = RoundedCornerShape(24.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.Brightness7,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(48.dp)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = "Go Premium", style = tHeadline, color = Color.White)
-                Text(text = "Unlock the full music experience", style = tArtist, color = textSecondary.copy(alpha = 0.9f))
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text(text = "Premium Benefits", style = tSection, color = textMain)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            listOf(
-                "Ad-free listening",
-                "High-quality audio",
-                "Offline downloads",
-                "Unlimited skips",
-                "Exclusive themes"
-            ).forEach { benefit ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        tint = success,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = benefit, style = tArtist, color = textMain)
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Brush.linearGradient(listOf(accentPrimary, accentSecondary)))
+                    .padding(vertical = 48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(56.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(text = "Go Premium", style = tHeadline, color = Color.White)
+                    Text(text = "Unlock the full music experience", style = tArtist, color = Color.White.copy(alpha = 0.9f))
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        SectionHeader(title = "Choose a Plan", modifier = Modifier.padding(horizontal = 16.dp))
-
-        LazyRow(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            SubscriptionPlanCard(
-                title = "Individual",
-                price = "$9.99",
-                period = "/month",
-                isPopular = false,
-                onSelect = {}
-            )
-            SubscriptionPlanCard(
-                title = "Premium",
-                price = "$14.99",
-                period = "/month",
-                isPopular = true,
-                onSelect = {}
-            )
-            SubscriptionPlanCard(
-                title = "Yearly",
-                price = "$99.99",
-                period = "/year",
-                isPopular = false,
-                onSelect = {}
-            )
+        item {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "Premium Benefits", style = tSection, color = textMain)
+                Spacer(modifier = Modifier.height(12.dp))
+                listOf(
+                    "Ad-free listening",
+                    "High-quality audio",
+                    "Offline downloads",
+                    "Unlimited skips",
+                    "Exclusive themes"
+                ).forEach { benefit ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = success, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(text = benefit, style = tArtist, color = textMain)
+                    }
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = onUpgrade,
-            colors = ButtonDefaults.buttonColors(containerColor = accentPrimary),
-            modifier = Modifier.fillMaxWidth(0.8f).height(52.dp)
-        ) {
-            Text("Upgrade Now")
+        item { SectionHeader(title = "Choose a Plan") }
+        item {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item { PlanCard("Individual", "$9.99", "/mo", false) }
+                item { PlanCard("Premium", "$14.99", "/mo", true) }
+                item { PlanCard("Yearly", "$99.99", "/yr", false) }
+            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(onClick = {}) {
-            Text("Restore Purchase", style = tArtist, color = textSecondary)
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Button(
+                    onClick = onUpgrade,
+                    colors = ButtonDefaults.buttonColors(containerColor = accentPrimary),
+                    modifier = Modifier.fillMaxWidth().height(52.dp)
+                ) {
+                    Text("Upgrade Now")
+                }
+                TextButton(onClick = {}) {
+                    Text("Restore Purchase", style = tArtist, color = textSecondary)
+                }
+            }
         }
-
-        Spacer(modifier = Modifier.height(80.dp))
     }
 }
 
 @Composable
-private fun SubscriptionPlanCard(
-    title: String,
-    price: String,
-    period: String,
-    isPopular: Boolean,
-    onSelect: () -> Unit
-) {
+private fun PlanCard(title: String, price: String, period: String, popular: Boolean) {
     Column(
         modifier = Modifier
             .width(140.dp)
-            .clickable { onSelect() }
-            .background(
-                if (isPopular) surfaceElevated else surfaceCard,
-                shape = RoundedCornerShape(16.dp)
-            ),
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (popular) surfaceElevated else surfaceCard)
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (isPopular) {
+        if (popular) {
             Box(
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .background(accentPrimary, shape = RoundedCornerShape(4.dp))
+                    .background(accentPrimary, shape = RoundedCornerShape(6.dp))
                     .padding(horizontal = 8.dp, vertical = 2.dp)
             ) {
-                Text(text = "Popular", style = tNavLabel, color = Color.White)
+                Text("Popular", style = tNavLabel, color = Color.White)
             }
+        } else {
+            Spacer(modifier = Modifier.height(18.dp))
         }
-
         Spacer(modifier = Modifier.height(8.dp))
-
         Text(text = title, style = tSection, color = textMain)
-        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = "$price$period",
-            style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, color = textMain)
+            style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textMain)
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Divider(color = divider).let { Divider(modifier = Modifier.padding(horizontal = 12.dp), color = divider) }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         Text(text = "Ad-free", style = tArtist, color = textSecondary)
         Text(text = "Offline mode", style = tArtist, color = textSecondary)
         Text(text = "High quality", style = tArtist, color = textSecondary)
@@ -803,55 +605,36 @@ fun ListeningHistoryScreen(
     onClear: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
+    val dates = listOf("Today", "Yesterday", "Earlier This Week")
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 40.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = {}) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.ArrowDownward,
-                    contentDescription = null,
-                    tint = textMain
-                )
-            }
-            Text(text = "Listening History", style = tSection, color = textMain)
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(onClick = {}) {
-                Text("Search History", style = tArtist, color = accentPrimary)
-            }
-            TextButton(onClick = onClear) {
-                Text("Clear History", style = tArtist, color = textMuted)
-            }
-        }
-
-        ListDivider()
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
-        ) {
-            items(listOf("Today", "Yesterday", "This Week")) { date ->
-                Text(text = date, style = tSection, color = textMain)
-                Spacer(modifier = Modifier.height(8.dp))
-                items(MockData.recentSongs.take(3).indexed) { (index, song) ->
-                    SongItem(song, index = index, onClick = {})
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = textMain)
+                    }
+                    Text(text = "Listening History", style = tSection, color = textMain)
                 }
-                if (date != "This Week") ListDivider()
+                TextButton(onClick = onClear) {
+                    Text("Clear", style = tArtist, color = textMuted)
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(80.dp))
+        dates.forEach { date ->
+            item { SectionHeader(title = date) }
+            items(MockData.recentSongs) { song ->
+                SongItem(song = song, onClick = {}, modifier = Modifier.padding(horizontal = 16.dp))
+            }
+        }
     }
 }
 
@@ -861,82 +644,43 @@ fun NotificationsScreen(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
+        modifier = modifier.fillMaxSize().background(bgPrimary)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 40.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = {}) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.ArrowDownward,
-                    contentDescription = null,
-                    tint = textMain
-                )
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = textMain)
             }
             Text(text = "Notifications", style = tSection, color = textMain)
         }
 
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            NotificationItem(
-                title = "New Release",
-                subtitle = "Luna Vale released a new album 'Nightfall'",
-                time = "2h ago",
-                icon = Icons.Default.Album
-            )
-            Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-
-            NotificationItem(
-                title = "Playlist Updated",
-                subtitle = "Chill Vibes has 3 new songs",
-                time = "5h ago",
-                icon = Icons.Default.LibraryMusic
-            )
-            Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-
-            NotificationItem(
-                title = "Artist Update",
-                subtitle = "New music from Sub Zero",
-                time = "1d ago",
-                icon = Icons.Default.Person
-            )
+        LazyColumn {
+            item { NotificationItem("New Release", "Luna Vale released a new album 'Nightfall'", "2h ago", Icons.Default.Album) }
+            item { NotificationItem("Playlist Updated", "Chill Vibes has 3 new songs", "5h ago", Icons.Default.LibraryMusic) }
+            item { NotificationItem("Artist Update", "New music from Sub Zero", "1d ago", Icons.Default.Person) }
         }
-
-        Spacer(modifier = Modifier.height(80.dp))
     }
 }
 
 @Composable
-private fun NotificationItem(
-    title: String,
-    subtitle: String,
-    time: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector
-) {
+private fun NotificationItem(title: String, subtitle: String, time: String, icon: ImageVector) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(surfaceElevated),
             contentAlignment = Alignment.Center
         ) {
-            androidx.compose.material3.Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = accentPrimary,
-                modifier = Modifier.size(20.dp)
-            )
+            Icon(icon, contentDescription = null, tint = accentPrimary, modifier = Modifier.size(20.dp))
         }
         Spacer(modifier = Modifier.width(12.dp))
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(text = title, style = tSongTitle, color = textMain)
             Text(text = subtitle, style = tArtist, color = textSecondary, maxLines = 1)
         }
-        Spacer(modifier = Modifier.weight(1f))
         Text(text = time, style = tNavLabel, color = textMuted)
     }
 }
@@ -947,77 +691,47 @@ fun HelpSupportScreen(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
+        modifier = modifier.fillMaxSize().background(bgPrimary)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 40.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = {}) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.ArrowDownward,
-                    contentDescription = null,
-                    tint = textMain
-                )
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = textMain)
             }
             Text(text = "Help & Support", style = tSection, color = textMain)
         }
 
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            HelpItem("FAQ", "Frequently asked questions", Icons.Default.Help, {})
-            Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-            HelpItem("Contact Support", "Email our support team", Icons.Default.Email, {})
-            Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-            HelpItem("Report a Problem", "Report bugs or issues", Icons.Default.BugReport, {})
-            Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-            HelpItem("App Feedback", "Send us your feedback", Icons.Default.Feedback, {})
-            Divider(modifier = Modifier.padding(horizontal = 16.dp), color = divider)
-            HelpItem("About App", "Version 1.0.0", Icons.Default.Info, {})
-        }
-
-        Spacer(modifier = Modifier.height(80.dp))
+        HelpItem("FAQ", "Frequently asked questions", Icons.Default.Help)
+        HelpItem("Contact Support", "Email our support team", Icons.Default.Email)
+        HelpItem("Report a Problem", "Report bugs or issues", Icons.Default.BugReport)
+        HelpItem("App Feedback", "Send us your feedback", Icons.Default.Feedback)
+        HelpItem("About App", "Version 1.0.0", Icons.Default.Info)
     }
 }
 
 @Composable
-private fun HelpItem(
-    title: String,
-    subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit
-) {
+private fun HelpItem(title: String, subtitle: String, icon: ImageVector) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(52.dp)
-            .clickable { onClick() },
+            .height(64.dp)
+            .clickable {}
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(surfaceElevated),
             contentAlignment = Alignment.Center
         ) {
-            androidx.compose.material3.Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = accentPrimary,
-                modifier = Modifier.size(20.dp)
-            )
+            Icon(icon, contentDescription = null, tint = accentPrimary, modifier = Modifier.size(20.dp))
         }
         Spacer(modifier = Modifier.width(12.dp))
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(text = title, style = tSongTitle, color = textMain)
             Text(text = subtitle, style = tArtist, color = textSecondary)
         }
-        Spacer(modifier = Modifier.weight(1f))
-        androidx.compose.material3.Icon(
-            imageVector = androidx.compose.material3.Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = textMuted,
-            modifier = Modifier.size(18.dp)
-        )
+        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = textMuted, modifier = Modifier.size(18.dp))
     }
 }

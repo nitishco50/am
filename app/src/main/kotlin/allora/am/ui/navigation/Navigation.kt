@@ -1,10 +1,18 @@
 package allora.am.ui.navigation
 
 import allora.am.model.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 // --- Navigation Routes ---
 sealed class Screen {
@@ -48,7 +56,7 @@ sealed class Screen {
 
 // --- Navigation State Holder ---
 class AppNavigation {
-    var currentScreen by mutableStateOf(Screen.Splash)
+    var currentScreen: Screen by mutableStateOf<Screen>(Screen.Splash)
     var miniPlayerSong: Song? = null
     var fullScreenPlayerSong: Song? = null
     var showMiniPlayer by mutableStateOf(false)
@@ -74,11 +82,11 @@ fun rememberAppNavigation(): AppNavigation = remember { AppNavigation() }
 
 // --- Bottom Nav Tab ---
 enum class BottomTab(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    Home("Home", androidx.compose.material3.Icons.Default.Home),
-    Explore("Explore", androidx.compose.material3.Icons.Default.Search),
-    Library("Library", androidx.compose.material3.Icons.Default.LibraryMusic),
-    Radio("Radio", androidx.compose.material3.Icons.Default.Radio),
-    Profile("Profile", androidx.compose.material3.Icons.Default.Person);
+    Home("Home", Icons.Default.Home),
+    Explore("Explore", Icons.Default.Search),
+    Library("Library", Icons.Default.LibraryMusic),
+    Radio("Radio", Icons.Default.Radio),
+    Profile("Profile", Icons.Default.Person);
 
     companion object {
         fun fromScreen(screen: Screen): BottomTab? = when (screen) {

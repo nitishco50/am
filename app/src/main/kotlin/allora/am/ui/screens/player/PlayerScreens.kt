@@ -3,18 +3,27 @@ package allora.am.ui.screens.player
 import allora.am.data.MockData
 import allora.am.model.Song
 import allora.am.ui.components.*
-import allora.am.ui.navigation.*
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.coil.AsyncImage
+import androidx.compose.ui.unit.sp
 
 // --- Screen 11: Full-Screen Music Player ---
 @Composable
@@ -34,229 +43,145 @@ fun FullScreenPlayerScreen(
 ) {
     if (song == null) return
 
-    val isPlaying by remember { mutableStateOf(true) }
-    val progress by remember { mutableStateOf(0.35f) }
+    var isPlaying by remember { mutableStateOf(true) }
+    var isShuffle by remember { mutableStateOf(false) }
+    var isRepeat by remember { mutableStateOf(false) }
+    var progress by remember { mutableFloatStateOf(0.35f) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(BackgroundPrimary)
+            .background(bgPrimary)
+            .padding(horizontal = 24.dp)
     ) {
-        // Top bar
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 40.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onClose) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.ArrowDownward,
-                    contentDescription = null,
-                    tint = textMain
-                )
+                Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Close", tint = textMain)
             }
-            Text(text = "Now Playing", style = tSection, color = textMain)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "NOW PLAYING", style = tNavLabel, color = textMuted)
+                Text(text = "From ${song.album ?: "Single"}", style = tArtist, color = textSecondary)
+            }
             IconButton(onClick = onMoreOptions) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.MoreVert,
-                    contentDescription = null,
-                    tint = textSecondary
-                )
+                Icon(Icons.Default.MoreVert, contentDescription = "More", tint = textSecondary)
             }
         }
 
-        // Album artwork
+        Spacer(modifier = Modifier.height(16.dp))
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 32.dp)
                 .aspectRatio(1f)
-                .background(surfaceElevated, shape = RoundedCornerShape(24.dp)),
+                .clip(RoundedCornerShape(24.dp))
+                .background(surfaceElevated),
             contentAlignment = Alignment.Center
         ) {
-            AsyncImage(
-                model = song.artworkUrl,
-                contentDescription = song.title,
-                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp))
-            ) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.Icon(
-                        imageVector = androidx.compose.material3.Icons.Default.Album,
-                        contentDescription = null,
-                        tint = textSecondary,
-                        modifier = Modifier.size(64.dp)
-                    )
-                }
+            ArtworkPlaceholder(song.artworkUrl, song.title, Modifier.fillMaxSize(), cornerRadius = 24.dp)
+            Icon(Icons.Default.Album, contentDescription = null, tint = textSecondary.copy(alpha = 0.5f), modifier = Modifier.size(96.dp))
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = song.title, style = tPlayerTitle, color = textMain, maxLines = 1)
+                Text(text = song.artist, style = tSongTitle, color = textSecondary, maxLines = 1)
+            }
+            IconButton(onClick = onFavorite) {
+                Icon(
+                    imageVector = if (song.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Favorite",
+                    tint = if (song.isFavorite) accentPrimary else textSecondary
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Song info
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = song.title,
-                style = tPlayerTitle,
-                color = textMain
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = song.artist,
-                style = tSongTitle,
-                color = textSecondary
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Favorite button
+        AudioProgressSlider(progress = progress, onProgressChange = { progress = it })
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = onFavorite) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.Favorite,
-                    contentDescription = null,
-                    tint = accentPrimary,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
+            val elapsed = (song.durationMs * progress).toLong().durationFormatted
+            Text(text = elapsed, style = tNavLabel, color = textMuted)
+            Text(text = song.durationFormatted, style = tNavLabel, color = textMuted)
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Progress slider
-        Column(
-            modifier = Modifier.padding(horizontal = 32.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = song.durationFormatted, style = tNavLabel, color = textMuted)
-                Spacer(modifier = Modifier.weight(1f))
-                Text(text = "-${song.durationFormatted}", style = tNavLabel, color = textMuted)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            AudioProgressSlider(
-                progress = progress,
-                onProgressChange = {},
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        Spacer(modifier = Modifier.height(40.dp))
-
-        // Player controls
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onShuffle) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.Shuffle,
-                    contentDescription = null,
-                    tint = textSecondary,
-                    modifier = Modifier.size(28.dp)
+            IconButton(onClick = { isShuffle = !isShuffle; onShuffle() }) {
+                Icon(
+                    Icons.Default.Shuffle,
+                    contentDescription = "Shuffle",
+                    tint = if (isShuffle) accentPrimary else textSecondary
                 )
             }
-
             IconButton(onClick = onPrevious) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.SkipPrevious,
-                    contentDescription = null,
-                    tint = textMain,
-                    modifier = Modifier.size(28.dp)
-                )
+                Icon(Icons.Default.SkipPrevious, contentDescription = "Previous", tint = textMain, modifier = Modifier.size(36.dp))
             }
-
-            // Main play/pause - larger
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(72.dp)
                     .background(accentPrimary, shape = CircleShape)
-                    .clickable { onPlayPause() },
+                    .clickable { isPlaying = !isPlaying; onPlayPause() },
                 contentAlignment = Alignment.Center
             ) {
-                androidx.compose.material3.Icon(
+                Icon(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = null,
+                    contentDescription = "Play/Pause",
                     tint = Color.White,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(36.dp)
                 )
             }
-
             IconButton(onClick = onNext) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.SkipNext,
-                    contentDescription = null,
-                    tint = textMain,
-                    modifier = Modifier.size(28.dp)
-                )
+                Icon(Icons.Default.SkipNext, contentDescription = "Next", tint = textMain, modifier = Modifier.size(36.dp))
             }
-
-            IconButton(onClick = onRepeat) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.Repeat,
-                    contentDescription = null,
-                    tint = textSecondary,
-                    modifier = Modifier.size(28.dp)
+            IconButton(onClick = { isRepeat = !isRepeat; onRepeat() }) {
+                Icon(
+                    Icons.Default.Repeat,
+                    contentDescription = "Repeat",
+                    tint = if (isRepeat) accentPrimary else textSecondary
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Secondary controls row
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            SecondaryControlButton(
-                icon = Icons.Default.QueueMusic,
-                label = "Queue",
-                onClick = onQueue
-            )
-            SecondaryControlButton(
-                icon = Icons.Default.Caption,
-                label = "Lyrics",
-                onClick = onLyrics
-            )
-            SecondaryControlButton(
-                icon = Icons.Default.Share,
-                label = "Share",
-                onClick = {}
-            )
+            SecondaryControl(Icons.Default.QueueMusic, "Queue", onQueue)
+            SecondaryControl(Icons.Default.Subtitles, "Lyrics", onLyrics)
+            SecondaryControl(Icons.Default.Share, "Share") {}
         }
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
 @Composable
-private fun SecondaryControlButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    onClick: () -> Unit
-) {
+private fun SecondaryControl(icon: ImageVector, label: String, onClick: () -> Unit) {
     Column(
         modifier = Modifier.clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        androidx.compose.material3.Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = textSecondary,
-            modifier = Modifier.size(24.dp)
-        )
+        Icon(icon, contentDescription = label, tint = textSecondary, modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(text = label, style = tNavLabel, color = textSecondary)
     }
 }
@@ -271,117 +196,60 @@ fun LyricsScreen(
     if (song == null) return
 
     val lyrics = listOf(
-        "0:12 - Midnight echoes in the quiet night",
-        "0:25 - Stars are shining bright above",
-        "0:38 - Lost in the rhythm of your heart",
-        "0:51 - We're dancing in the moonlight",
-        "1:04 - Everything feels so right",
-        "1:17 - The world fades away when you're near",
-        "1:30 - Just you and me, nothing else matters",
-        "1:43 - This moment will last forever",
-        "1:56 - Hear the music in the air",
-        "2:09 - Feel the beat of your heart",
-        "2:22 - We're flying high tonight",
-        "2:35 - Nothing can bring us down",
-        "2:48 - Just let the music play",
-        "3:01 - Until the morning light",
-        "3:14 - Midnight echoes fade away",
-        "3:27 - But the memory remains"
+        "Midnight echoes in the quiet night",
+        "Stars are shining bright above",
+        "Lost in the rhythm of your heart",
+        "We're dancing in the moonlight",
+        "Everything feels so right",
+        "The world fades away when you're near",
+        "Just you and me, nothing else matters",
+        "This moment will last forever",
+        "Hear the music in the air",
+        "Feel the beat of your heart",
+        "We're flying high tonight",
+        "Nothing can bring us down",
+        "Just let the music play",
+        "Until the morning light",
+        "Midnight echoes fade away",
+        "But the memory remains"
     )
-    val currentLyricIndex by remember { mutableStateOf(3) }
+    val currentLine = 3
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
+    LazyColumn(
+        modifier = modifier.fillMaxSize().background(bgPrimary),
+        contentPadding = PaddingValues(horizontal = 32.dp, vertical = 24.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 40.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onClose) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.ArrowDownward,
-                    contentDescription = null,
-                    tint = textMain
-                )
-            }
-            Text(text = "Lyrics", style = tSection, color = textMain)
-            IconButton(onClick = {}) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.MoreVert,
-                    contentDescription = null,
-                    tint = textSecondary
-                )
-            }
-        }
-
-        // Album thumbnail
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(12.dp)).background(surfaceElevated),
-                contentAlignment = Alignment.Center
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                AsyncImage(
-                    model = song.artworkUrl,
-                    contentDescription = song.title,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        androidx.compose.material3.Icon(
-                            imageVector = androidx.compose.material3.Icons.Default.Album,
-                            contentDescription = null,
-                            tint = textSecondary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Close", tint = textMain)
                 }
-            }
-
-            Column {
-                Text(text = song.title, style = tSongTitle, color = textMain)
-                Text(text = song.artist, style = tArtist, color = textSecondary)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = song.title, style = tArtist, color = textMain)
+                    Text(text = song.artist, style = tNavLabel, color = textSecondary)
+                }
+                IconButton(onClick = {}) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = textSecondary)
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Lyrics content
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            items(lyrics.indexed) { (index, line) ->
-                val isCurrent = index == currentLyricIndex
-                val alpha = if (isCurrent) 1f else if (index < currentLyricIndex) 0.4f else 0.6f
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(animationSpec = androidx.compose.animation.tween(300))
-                ) {
-                    Text(
-                        text = line,
-                        style = TextStyle(
-                            fontSize = if (isCurrent) 20.sp else 16.sp,
-                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isCurrent) textMain else textSecondary.copy(alpha = alpha)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .animateContentSize(),
-                        textAlign = androidx.compose.ui.text.TextAlign.Center
-                    )
-                }
-            }
+        itemsIndexed(lyrics) { index, line ->
+            val isCurrent = index == currentLine
+            Text(
+                text = line,
+                style = TextStyle(
+                    fontSize = if (isCurrent) 20.sp else 16.sp,
+                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isCurrent) textMain else if (index < currentLine) textMuted else textSecondary
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+            )
         }
     }
 }
@@ -391,6 +259,7 @@ fun LyricsScreen(
 fun QueueScreen(
     onClose: () -> Unit,
     onClear: () -> Unit,
+    onSongClick: (Song) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val songs = MockData.songs
@@ -400,129 +269,49 @@ fun QueueScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(BackgroundPrimary)
+            .background(bgPrimary)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 40.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onClose) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.ArrowDownward,
-                    contentDescription = null,
-                    tint = textMain
-                )
+                Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Close", tint = textMain)
             }
             Text(text = "Playing Next", style = tSection, color = textMain)
             IconButton(onClick = onClear) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.DeleteOutline,
-                    contentDescription = null,
-                    tint = textMuted
+                Icon(Icons.Default.DeleteOutline, contentDescription = "Clear", tint = textMuted)
+            }
+        }
+
+        Text(
+            text = "NOW PLAYING",
+            style = tNavLabel,
+            color = textMuted,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        SongItem(song = currentSong, showNumber = false, modifier = Modifier.padding(horizontal = 16.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "UP NEXT",
+            style = tNavLabel,
+            color = textMuted,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            itemsIndexed(upNext) { index, song ->
+                SongItem(
+                    song = song,
+                    index = index,
+                    showNumber = false,
+                    onClick = { onSongClick(song) },
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
         }
-
-        // Currently playing
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(surfaceElevated),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AsyncImage(
-                        model = currentSong.artworkUrl,
-                        contentDescription = currentSong.title,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            androidx.compose.material3.Icon(
-                                imageVector = androidx.compose.material3.Icons.Default.Album,
-                                contentDescription = null,
-                                tint = textSecondary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(text = currentSong.title, style = tSongTitle, color = textMain)
-                    Text(text = currentSong.artist, style = tArtist, color = textSecondary)
-                }
-            }
-        }
-
-        ListDivider()
-
-        // Up Next list
-        Text(
-            text = "Up Next",
-            style = tArtist,
-            color = textMuted,
-            modifier = Modifier.padding(horizontal = 16.dp, top = 16.dp, bottom = 8.dp)
-        )
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(upNext.indexed) { (index, song) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .clickable {}
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = (index + 2).toString(),
-                        style = tArtist,
-                        color = textMuted,
-                        modifier = Modifier.width(24.dp)
-                    )
-                    Box(
-                        modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(surfaceElevated),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = song.artworkUrl,
-                            contentDescription = song.title,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                androidx.compose.material3.Icon(
-                                    imageVector = androidx.compose.material3.Icons.Default.MusicNote,
-                                    contentDescription = null,
-                                    tint = textSecondary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(text = song.title, style = tSongTitle, color = textMain, maxLines = 1)
-                        Text(text = song.artist, style = tArtist, color = textSecondary, maxLines = 1)
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(text = song.durationFormatted, style = tArtist, color = textMuted)
-                }
-                if (index < upNext.size - 1) ListDivider()
-            }
-        }
-
-        Spacer(modifier = Modifier.height(80.dp))
     }
 }
 
@@ -544,18 +333,12 @@ fun PlayerMoreOptionsSheet(
         onClose = onClose,
         modifier = modifier
     ) {
-        MoreOptionsMenuItem("Add to Playlist", Icons.Default.AddToPlaylist, onAddPlaylist)
-        Divider(color = divider).let { Divider(modifier = Modifier.padding(horizontal = 8.dp), color = divider) }
+        MoreOptionsMenuItem("Add to Playlist", Icons.Default.PlaylistAdd, onAddPlaylist)
         MoreOptionsMenuItem("Add to Favorites", Icons.Default.Favorite, onAddFavorite)
-        Divider(modifier = Modifier.padding(horizontal = 8.dp), color = divider)
         MoreOptionsMenuItem("Go to Artist", Icons.Default.Person, onGoArtist)
-        Divider(modifier = Modifier.padding(horizontal = 8.dp), color = divider)
         MoreOptionsMenuItem("Go to Album", Icons.Default.Album, onGoAlbum)
-        Divider(modifier = Modifier.padding(horizontal = 8.dp), color = divider)
-        MoreOptionsMenuItem("View Lyrics", Icons.Default.Caption, onViewLyrics)
-        Divider(modifier = Modifier.padding(horizontal = 8.dp), color = divider)
+        MoreOptionsMenuItem("View Lyrics", Icons.Default.Subtitles, onViewLyrics)
         MoreOptionsMenuItem("Share", Icons.Default.Share, onShare)
-        Divider(modifier = Modifier.padding(horizontal = 8.dp), color = divider)
         MoreOptionsMenuItem("Song Information", Icons.Default.Info, onSongInfo)
     }
 }

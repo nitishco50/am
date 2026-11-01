@@ -1,19 +1,36 @@
 package allora.am.ui.components
 
 import allora.am.model.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.LinearGradient
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 // --- Color & Typography shortcuts ---
 val bgPrimary = allora.am.ui.theme.BackgroundPrimary
@@ -28,26 +45,21 @@ val textMuted = allora.am.ui.theme.TextMuted
 val divider = allora.am.ui.theme.Divider
 val success = allora.am.ui.theme.Success
 
-val tHeadline = allora.am.ui.theme.Typography.h1
-val tSection = allora.am.ui.theme.Typography.h2
+val tHeadline = allora.am.ui.theme.Typography.headlineLarge
+val tSection = allora.am.ui.theme.Typography.headlineMedium
 val tSongTitle = allora.am.ui.theme.Typography.bodyLarge
 val tArtist = allora.am.ui.theme.Typography.labelMedium
 val tNavLabel = allora.am.ui.theme.Typography.labelSmall
 val tPlayerTitle = allora.am.ui.theme.Typography.titleLarge
 
-// --- Helper: Aspect Ratio Box for artwork ---
-@Composable
-fun AspectRatioBox(
-    modifier: Modifier = Modifier,
-    aspectRatio: Float = 1f,
-    content: @Composable () -> Unit
-) {
-    Box(
-        modifier = modifier.aspectRatio(aspectRatio)
-    ) {
-        content()
+// --- Duration helper ---
+val Long.durationFormatted: String
+    get() {
+        val seconds = this / 1000
+        val minutes = seconds / 60
+        val remainingSeconds = seconds % 60
+        return "$minutes:${remainingSeconds.toString().padStart(2, '0')}"
     }
-}
 
 // --- Placeholder artwork ---
 @Composable
@@ -60,11 +72,11 @@ fun ArtworkPlaceholder(
     Box(
         modifier = modifier
             .background(surfaceElevated)
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius)),
+            .clip(RoundedCornerShape(cornerRadius)),
         contentAlignment = Alignment.Center
     ) {
-        androidx.compose.material3.Icon(
-            imageVector = androidx.compose.material3.Icons.Default.Album,
+        Icon(
+            imageVector = Icons.Default.Album,
             contentDescription = contentDescription,
             tint = textSecondary,
             modifier = Modifier.size(32.dp)
@@ -107,7 +119,7 @@ fun BottomNavBar(
                         .padding(horizontal = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    androidx.compose.material3.Icon(
+                    Icon(
                         imageVector = icon,
                         contentDescription = label,
                         tint = if (isSelected) accentPrimary else textMuted,
@@ -141,24 +153,24 @@ fun MiniPlayer(
             .fillMaxWidth()
             .height(64.dp)
             .background(surfaceElevated)
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp))
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Album art
-            Clip(
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-                modifier = Modifier.size(48.dp).clickable { onExpand() }
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onExpand() }
             ) {
-                ArtworkPlaceholder(song.artworkUrl, song.title, Modifier.fillMaxSize(), cornerRadius = 0.dp)
+                ArtworkPlaceholder(song.artworkUrl, song.title, Modifier.fillMaxSize(), cornerRadius = 8.dp)
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Song info
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center
@@ -168,34 +180,25 @@ fun MiniPlayer(
                     style = tSongTitle,
                     color = textMain,
                     maxLines = 1,
-                    overflow = androidx.compose.foundation.layout.Overflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = song.artist,
                     style = tArtist,
                     color = textSecondary,
                     maxLines = 1,
-                    overflow = androidx.compose.foundation.layout.Overflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Controls
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onPlayPause) {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.Default.Pause,
-                        contentDescription = null,
-                        tint = textMain
-                    )
+                    Icon(Icons.Default.Pause, contentDescription = "Play/Pause", tint = textMain)
                 }
                 IconButton(onClick = onNext) {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.Default.SkipNext,
-                        contentDescription = null,
-                        tint = textMain
-                    )
+                    Icon(Icons.Default.SkipNext, contentDescription = "Next", tint = textMain)
                 }
             }
         }
@@ -238,14 +241,14 @@ fun SongItem(
                 style = tSongTitle,
                 color = textMain,
                 maxLines = 1,
-                overflow = androidx.compose.foundation.layout.Overflow.Ellipsis
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = song.artist,
                 style = tArtist,
                 color = textSecondary,
                 maxLines = 1,
-                overflow = androidx.compose.foundation.layout.Overflow.Ellipsis
+                overflow = TextOverflow.Ellipsis
             )
         }
 
@@ -259,9 +262,9 @@ fun SongItem(
             )
             Spacer(modifier = Modifier.width(12.dp))
             IconButton(onClick = onFavorite) {
-                androidx.compose.material3.Icon(
+                Icon(
                     imageVector = if (song.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = null,
+                    contentDescription = "Favorite",
                     tint = if (song.isFavorite) accentPrimary else textMuted
                 )
             }
@@ -282,15 +285,15 @@ fun AlbumCard(
             .clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AspectRatioBox(aspectRatio = 1f) {
+        Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(16.dp))
                     .background(surfaceElevated),
                 contentAlignment = Alignment.Center
             ) {
-                ArtworkPlaceholder(album.artworkUrl, album.title, Modifier.fillMaxSize(), cornerRadius = 0.dp)
+                ArtworkPlaceholder(album.artworkUrl, album.title, Modifier.fillMaxSize(), cornerRadius = 16.dp)
             }
         }
 
@@ -301,14 +304,14 @@ fun AlbumCard(
             style = tSongTitle,
             color = textMain,
             maxLines = 1,
-            overflow = androidx.compose.foundation.layout.Overflow.Ellipsis
+            overflow = TextOverflow.Ellipsis
         )
         Text(
             text = album.artist,
             style = tArtist,
             color = textSecondary,
             maxLines = 1,
-            overflow = androidx.compose.foundation.layout.Overflow.Ellipsis
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -329,11 +332,11 @@ fun ArtistCard(
         Box(
             modifier = Modifier
                 .size(150.dp)
-                .clip(androidx.compose.foundation.shape.CircleShape)
+                .clip(CircleShape)
                 .background(surfaceElevated),
             contentAlignment = Alignment.Center
         ) {
-            ArtworkPlaceholder(artist.imageUrl, artist.name, Modifier.fillMaxSize(), cornerRadius = 0.dp)
+            ArtworkPlaceholder(artist.imageUrl, artist.name, Modifier.fillMaxSize(), cornerRadius = 75.dp)
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -343,7 +346,7 @@ fun ArtistCard(
             style = tSongTitle,
             color = textMain,
             maxLines = 1,
-            overflow = androidx.compose.foundation.layout.Overflow.Ellipsis
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -361,27 +364,26 @@ fun PlaylistCard(
             .clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AspectRatioBox(aspectRatio = 1f) {
+        Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(16.dp))
                     .background(surfaceElevated),
                 contentAlignment = Alignment.Center
             ) {
-                ArtworkPlaceholder(playlist.artworkUrl, playlist.title, Modifier.fillMaxSize(), cornerRadius = 0.dp)
-                // Play overlay
+                ArtworkPlaceholder(playlist.artworkUrl, playlist.title, Modifier.fillMaxSize(), cornerRadius = 16.dp)
                 Box(
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 8.dp)
-                        .background(accentPrimary, shape = androidx.compose.foundation.shape.CircleShape)
+                        .align(Alignment.BottomEnd)
+                        .padding(8.dp)
+                        .background(accentPrimary, shape = CircleShape)
                         .size(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    androidx.compose.material3.Icon(
+                    Icon(
                         imageVector = Icons.Default.PlayArrow,
-                        contentDescription = null,
+                        contentDescription = "Play",
                         tint = Color.White,
                         modifier = Modifier.size(16.dp)
                     )
@@ -396,7 +398,7 @@ fun PlaylistCard(
             style = tSongTitle,
             color = textMain,
             maxLines = 1,
-            overflow = androidx.compose.foundation.layout.Overflow.Ellipsis
+            overflow = TextOverflow.Ellipsis
         )
         Text(
             text = "${playlist.songCount} songs",
@@ -415,12 +417,6 @@ fun FeaturedBanner(
     onPlay: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val gradient = Brush.linearGradient(
-        colors = listOf(Color.Transparent, Color(0x80000000)),
-        start = Alignment.TopCenter,
-        end = Alignment.BottomCenter
-    )
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -431,20 +427,25 @@ fun FeaturedBanner(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .background(surfaceElevated),
             contentAlignment = Alignment.Center
         ) {
-            ArtworkPlaceholder(artworkUrl, title, Modifier.fillMaxSize(), cornerRadius = 0.dp)
+            ArtworkPlaceholder(artworkUrl, title, Modifier.fillMaxSize(), cornerRadius = 20.dp)
         }
 
         Box(
-            modifier = Modifier.fillMaxSize().clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp)),
-            contentAlignment = Alignment.BottomStart,
-            background = gradient
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(20.dp))
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color(0xB3000000))
+                    )
+                ),
+            contentAlignment = Alignment.BottomStart
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Spacer(modifier = Modifier.height(40.dp))
                 Text(
                     text = title,
                     style = tSection,
@@ -474,49 +475,49 @@ fun SearchBar(
 ) {
     var text by remember { mutableStateOf(value) }
 
-    BasicTextField(
-        value = text,
-        onValueChange = { text = it; onValueChange(it) },
-        textStyle = TextStyle(color = textMain, fontSize = 16.sp),
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .height(52.dp)
-            .background(surfaceElevated, shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
+            .background(surfaceElevated, shape = RoundedCornerShape(14.dp))
             .padding(horizontal = 16.dp),
-        decorationBox = { inner ->
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterVertically
-            ) {
-                Row(
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                tint = textMuted,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(modifier = Modifier.weight(1f)) {
+                if (text.isEmpty()) {
+                    Text(text = placeholder, style = tArtist, color = textMuted)
+                }
+                BasicTextField(
+                    value = text,
+                    onValueChange = { text = it; onValueChange(it) },
+                    textStyle = TextStyle(color = textMain, fontSize = 16.sp),
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = null,
+                    singleLine = true
+                )
+            }
+            if (text.isNotEmpty()) {
+                IconButton(onClick = { text = ""; onClear() }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Clear",
                         tint = textMuted,
                         modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    inner(
-                        modifier = Modifier.weight(1f)
-                    )
-                    if (text.isNotEmpty()) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(onClick = { text = ""; onClear() }) {
-                            androidx.compose.material3.Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = null,
-                                tint = textMuted,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
                 }
             }
         }
-    )
+    }
 }
 
 // --- 9. Filter Chips ---
@@ -537,7 +538,7 @@ fun FilterChips(
                 onClick = { onSelect(item) },
                 selected = isSelected,
                 label = { Text(text = item, style = tArtist, color = if (isSelected) Color.White else textSecondary) },
-                colors = FilterChipDefaults.colors(
+                colors = FilterChipDefaults.filterChipColors(
                     containerColor = if (isSelected) accentPrimary else surfaceElevated
                 ),
                 modifier = Modifier.height(32.dp)
@@ -562,11 +563,11 @@ fun GenreCard(
         Box(
             modifier = Modifier
                 .size(140.dp)
-                .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .background(surfaceElevated),
             contentAlignment = Alignment.Center
         ) {
-            ArtworkPlaceholder(genre.artworkUrl, genre.name, Modifier.fillMaxSize(), cornerRadius = 0.dp)
+            ArtworkPlaceholder(genre.artworkUrl, genre.name, Modifier.fillMaxSize(), cornerRadius = 16.dp)
         }
 
         Spacer(modifier = Modifier.height(6.dp))
@@ -599,17 +600,15 @@ fun MoodCard(
         Box(
             modifier = Modifier
                 .size(130.dp)
-                .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(gradientStart, gradientEnd),
-                        start = Alignment.TopLeft,
-                        end = Alignment.BottomRight
+                        colors = listOf(gradientStart, gradientEnd)
                     )
                 ),
             contentAlignment = Alignment.Center
         ) {
-            ArtworkPlaceholder(mood.artworkUrl, mood.name, Modifier.fillMaxSize().alpha(0.6f), cornerRadius = 0.dp)
+            ArtworkPlaceholder(mood.artworkUrl, mood.name, Modifier.fillMaxSize().alpha(0.6f), cornerRadius = 20.dp)
         }
 
         Spacer(modifier = Modifier.height(6.dp))
@@ -635,7 +634,7 @@ fun ModalBottomSheetContent(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 16.dp)
-            .background(surfaceCard, shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
+            .background(surfaceCard, shape = RoundedCornerShape(20.dp))
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -644,11 +643,7 @@ fun ModalBottomSheetContent(
         ) {
             Text(text = title, style = tSection, color = textMain)
             IconButton(onClick = onClose) {
-                androidx.compose.material3.Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = null,
-                    tint = textMuted
-                )
+                Icon(Icons.Default.Close, contentDescription = "Close", tint = textMuted)
             }
         }
 
@@ -664,7 +659,7 @@ fun ModalBottomSheetContent(
 @Composable
 fun MoreOptionsMenuItem(
     text: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -675,7 +670,7 @@ fun MoreOptionsMenuItem(
             .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        androidx.compose.material3.Icon(
+        Icon(
             imageVector = icon,
             contentDescription = null,
             tint = textSecondary,
@@ -691,7 +686,7 @@ fun MoreOptionsMenuItem(
 fun LoadingSkeleton(
     width: Dp,
     height: Dp,
-    shape: androidx.compose.foundation.shape.Shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(4.dp),
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -705,7 +700,7 @@ fun LoadingSkeleton(
 // --- 15. Empty State ---
 @Composable
 fun EmptyState(
-    icon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Default.Inbox,
+    icon: ImageVector = Icons.Default.Inbox,
     title: String = "No results found",
     subtitle: String = "Try searching for something else",
     modifier: Modifier = Modifier
@@ -715,7 +710,7 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        androidx.compose.material3.Icon(
+        Icon(
             imageVector = icon,
             contentDescription = null,
             tint = textMuted,
@@ -740,7 +735,7 @@ fun ErrorState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        androidx.compose.material3.Icon(
+        Icon(
             imageVector = Icons.Default.ErrorOutline,
             contentDescription = null,
             tint = accentPrimary,
@@ -780,10 +775,11 @@ fun ConfirmationDialog(
         text = {
             Text(text = message, style = tArtist, color = textMain)
         },
+        title = {
+            Text(text = title, style = tSection, color = textMain)
+        },
         modifier = modifier
-    ) {
-        Text(text = title, style = tSection, color = textMain)
-    }
+    )
 }
 
 // --- 19. Audio Progress Slider ---
@@ -797,11 +793,10 @@ fun AudioProgressSlider(
         value = progress,
         onValueChange = onProgressChange,
         valueRange = 0f..1f,
-        onValueChangeFinished = {},
         colors = SliderDefaults.colors(
+            thumbColor = accentPrimary,
             activeTrackColor = accentPrimary,
-            inactiveTrackColor = divider,
-            thumbColor = accentPrimary
+            inactiveTrackColor = divider
         ),
         modifier = modifier.fillMaxWidth()
     )
@@ -815,7 +810,7 @@ fun PremiumBadge(
     Box(
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 2.dp)
-            .background(accentPrimary, shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp)),
+            .background(accentPrimary, shape = RoundedCornerShape(6.dp)),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -861,12 +856,4 @@ fun SectionHeader(
             }
         }
     }
-}
-
-// --- Duration helper ---
-fun Long.durationFormatted: String {
-    val seconds = this / 1000
-    val minutes = seconds / 60
-    val remainingSeconds = seconds % 60
-    return "$minutes:${remainingSeconds.toString().padStart(2, '0')}"
 }

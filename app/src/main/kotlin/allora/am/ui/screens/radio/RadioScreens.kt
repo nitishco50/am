@@ -1,18 +1,31 @@
 package allora.am.ui.screens.radio
 
 import allora.am.data.MockData
+import allora.am.model.RadioStation
+import allora.am.model.Song
 import allora.am.ui.components.*
-import allora.am.ui.navigation.*
+import allora.am.ui.navigation.Screen
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.coil.AsyncImage
+import androidx.compose.ui.unit.sp
 
 // --- Screen 24: Radio ---
 @Composable
@@ -20,245 +33,157 @@ fun RadioScreen(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
-            .verticalScroll(rememberScrollState())
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = "Radio", style = tHeadline, color = textMain)
+        item {
+            Text(
+                text = "Radio",
+                style = tHeadline,
+                color = textMain,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        SectionHeader(title = "Featured Stations")
-
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-        ) {
-            items(MockData.radioStations.take(3)) { station ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(72.dp)
-                        .clickable { onNavigate(Screen.RadioStationDetails) }
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp)).background(surfaceElevated),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = station.artworkUrl,
-                            contentDescription = station.name,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                androidx.compose.material3.Icon(
-                                    imageVector = androidx.compose.material3.Icons.Default.Radio,
-                                    contentDescription = null,
-                                    tint = textSecondary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(text = station.name, style = tSongTitle, color = textMain)
-                        Text(text = station.genre ?: "Music", style = tArtist, color = textSecondary)
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    Button(
-                        onClick = {},
-                        colors = ButtonDefaults.buttonColors(containerColor = accentPrimary),
-                        modifier = Modifier.height(36.dp)
-                    ) {
-                        Text("Play", style = TextStyle(fontSize = 14.sp))
-                    }
+        item { SectionHeader(title = "Featured Stations") }
+        items(MockData.radioStations) { station ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(76.dp)
+                    .clickable { onNavigate(Screen.RadioStationDetails) }
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp)).background(surfaceElevated)) {
+                    ArtworkPlaceholder(station.artworkUrl, station.name, Modifier.fillMaxSize(), cornerRadius = 14.dp)
                 }
-                ListDivider()
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = station.name, style = tSongTitle, color = textMain, maxLines = 1)
+                    Text(text = station.genre ?: "Music", style = tArtist, color = textSecondary, maxLines = 1)
+                }
+                FilledIconButton(
+                    onClick = {},
+                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = accentPrimary)
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = Color.White)
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        SectionHeader(title = "Genre Radio")
-
-        LazyRow(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(listOf("Pop Radio", "Rock Radio", "Hip-Hop Radio", "Electronic Radio", "Jazz Radio")) { genre ->
-                Box(
-                    modifier = Modifier
-                        .width(120.dp)
-                        .clickable { onNavigate(Screen.GenreDetails) }
-                        .background(surfaceElevated, shape = RoundedCornerShape(16.dp))
-                ) {
+        item { SectionHeader(title = "Genre Radio") }
+        item {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(listOf("Pop", "Rock", "Hip-Hop", "Electronic", "Jazz")) { genre ->
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        modifier = Modifier
+                            .width(110.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(surfaceElevated)
+                            .clickable { onNavigate(Screen.GenreDetails) }
+                            .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        androidx.compose.material3.Icon(
-                            imageVector = androidx.compose.material3.Icons.Default.Radio,
-                            contentDescription = null,
-                            tint = accentPrimary,
-                            modifier = Modifier.size(24.dp)
-                        )
+                        Icon(Icons.Default.Radio, contentDescription = null, tint = accentPrimary, modifier = Modifier.size(28.dp))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = genre, style = tArtist, color = textMain, maxLines = 1)
+                        Text(text = "$genre Radio", style = tArtist, color = textMain, maxLines = 1)
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        SectionHeader(title = "Mood Radio")
-
-        LazyRow(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(MockData.moods.take(5)) { mood ->
-                MoodCard(mood, onClick = { onNavigate(Screen.MoodMoments) })
+        item { SectionHeader(title = "Mood Radio") }
+        item {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(MockData.moods) { mood ->
+                    MoodCard(mood, onClick = { onNavigate(Screen.MoodMoments) })
+                }
             }
         }
-
-        Spacer(modifier = Modifier.height(100.dp))
     }
 }
 
 // --- Screen 25: Radio Station Details ---
 @Composable
 fun RadioStationDetailsScreen(
+    station: RadioStation = MockData.radioStations.first(),
     onClose: () -> Unit,
     onPlay: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val station = MockData.radioStations.first()
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 40.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onClose) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.ArrowDownward,
-                    contentDescription = null,
-                    tint = textMain
-                )
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Close", tint = textMain)
+                }
+                Text(text = "Radio Station", style = tSection, color = textMain)
             }
-            Text(text = station.name, style = tSection, color = textMain)
         }
 
-        // Station artwork
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(240.dp)
-                .background(surfaceElevated, shape = RoundedCornerShape(24.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            AsyncImage(
-                model = station.artworkUrl,
-                contentDescription = station.name,
-                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp))
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.Icon(
-                        imageVector = androidx.compose.material3.Icons.Default.Radio,
-                        contentDescription = null,
-                        tint = textSecondary,
-                        modifier = Modifier.size(64.dp)
-                    )
+                Box(modifier = Modifier.size(180.dp).clip(RoundedCornerShape(20.dp)).background(surfaceElevated)) {
+                    ArtworkPlaceholder(station.artworkUrl, station.name, Modifier.fillMaxSize(), cornerRadius = 20.dp)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = station.name, style = tHeadline, color = textMain)
+                Text(text = station.description ?: "", style = tSongTitle, color = textSecondary)
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = onPlay,
+                    colors = ButtonDefaults.buttonColors(containerColor = accentPrimary),
+                    modifier = Modifier.width(200.dp).height(48.dp)
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Play Station")
                 }
             }
         }
 
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(text = station.name, style = tHeadline, color = textMain)
-            Text(text = station.description ?: "Great music, all day long", style = tSongTitle, color = textSecondary)
+        item { SectionHeader(title = "Recommended Songs") }
+        itemsIndexed(MockData.songs.take(6)) { index, song ->
+            SongItem(song, index = index, onClick = {}, modifier = Modifier.padding(horizontal = 16.dp))
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = onPlay,
-            colors = ButtonDefaults.buttonColors(containerColor = accentPrimary),
-            modifier = Modifier.fillMaxWidth(0.6f).height(52.dp)
-        ) {
-            Text("Play Station")
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        SectionHeader(title = "Recommended Songs", modifier = Modifier.padding(horizontal = 16.dp))
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
-        ) {
-            items(MockData.songs.take(6).indexed) { (index, song) ->
-                SongItem(song, index = index, onClick = {})
-                if (index < 5) ListDivider()
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        SectionHeader(title = "Related Stations", modifier = Modifier.padding(horizontal = 16.dp))
-
-        LazyRow(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(MockData.radioStations.drop(1)) { station ->
-                Box(
-                    modifier = Modifier
-                        .width(120.dp)
-                        .clickable {}
-                        .background(surfaceElevated, shape = RoundedCornerShape(16.dp))
-                ) {
+        item { SectionHeader(title = "Related Stations") }
+        item {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(MockData.radioStations) { st ->
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        modifier = Modifier.width(120.dp).clickable {},
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        AsyncImage(
-                            model = station.artworkUrl,
-                            contentDescription = station.name,
-                            modifier = Modifier.size(56.dp).clip(RoundedCornerShape(12.dp))
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                androidx.compose.material3.Icon(
-                                    imageVector = androidx.compose.material3.Icons.Default.Radio,
-                                    contentDescription = null,
-                                    tint = textSecondary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                        Box(modifier = Modifier.size(120.dp).clip(RoundedCornerShape(16.dp)).background(surfaceElevated)) {
+                            ArtworkPlaceholder(st.artworkUrl, st.name, Modifier.fillMaxSize(), cornerRadius = 16.dp)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = station.name, style = tArtist, color = textMain, maxLines = 1)
+                        Text(text = st.name, style = tArtist, color = textMain, maxLines = 1)
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(100.dp))
     }
 }
 
@@ -268,34 +193,40 @@ fun MoodMomentsScreen(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
-            .verticalScroll(rememberScrollState())
+    val moods = MockData.moods
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = "Mood & Moments", style = tHeadline, color = textMain)
+        item {
+            Text(
+                text = "Mood & Moments",
+                style = tHeadline,
+                color = textMain,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        LazyVerticalGrid(
-            columns = androidx.compose.foundation.lazy.GridCells.Fixed(2),
-            modifier = Modifier.padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(MockData.moods) { mood ->
-                MoodCard(mood, onClick = { onNavigate(Screen.GenreDetails) })
+        item {
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                moods.chunked(2).forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        rowItems.forEach { mood ->
+                            MoodCard(
+                                mood = mood,
+                                onClick = { onNavigate(Screen.GenreDetails) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (rowItems.size == 1) Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
-
-        Spacer(modifier = Modifier.height(100.dp))
     }
 }
 
@@ -303,132 +234,106 @@ fun MoodMomentsScreen(
 @Composable
 fun GenreDetailsScreen(
     onClose: () -> Unit,
-    onSongClick: (alora.am.model.Song) -> Unit,
+    onSongClick: (Song) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val genre = MockData.genres.first()
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 40.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onClose) {
-                androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material3.Icons.Default.ArrowDownward,
-                    contentDescription = null,
-                    tint = textMain
-                )
-            }
-            Text(text = genre.name, style = tSection, color = textMain)
-        }
-
-        // Genre banner
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .background(
-                    androidx.compose.ui.graphics.Brush.linearGradient(
-                        colors = listOf(accentPrimary, accentSecondary),
-                        start = Alignment.TopLeft,
-                        end = Alignment.BottomRight
-                    ),
-                    shape = RoundedCornerShape(24.dp)
-                ),
-            contentAlignment = Alignment.BottomStart
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Spacer(modifier = Modifier.height(20.dp))
-                Text(text = genre.name, style = tHeadline, color = Color.White)
-                Text(text = "Discover the best of ${genre.name.toLowerCase()} music", style = tArtist, color = textSecondary.copy(alpha = 0.8f))
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Close", tint = textMain)
+                }
+                Text(text = "Genre", style = tSection, color = textMain)
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        SectionHeader(title = "Popular Songs", modifier = Modifier.padding(horizontal = 16.dp))
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
-        ) {
-            items(MockData.songs.take(8).indexed) { (index, song) ->
-                SongItem(song, index = index, onClick = { onSongClick(song) })
-                if (index < 7) ListDivider()
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Brush.linearGradient(listOf(accentPrimary, accentSecondary))),
+                contentAlignment = Alignment.BottomStart
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = genre.name, style = tHeadline, color = Color.White)
+                    Text(text = "The best of ${genre.name}", style = tArtist, color = Color.White.copy(alpha = 0.8f))
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        item { SectionHeader(title = "Popular Songs") }
+        itemsIndexed(MockData.songs) { index, song ->
+            SongItem(song, index = index, onClick = { onSongClick(song) }, modifier = Modifier.padding(horizontal = 16.dp))
+        }
 
-        SectionHeader(title = "Top Artists", modifier = Modifier.padding(horizontal = 16.dp))
-
-        LazyRow(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(MockData.artists.take(4)) { artist ->
-                ArtistCard(artist, onClick = {})
+        item { SectionHeader(title = "Top Artists") }
+        item {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(MockData.artists) { artist ->
+                    ArtistCard(artist, onClick = {})
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        SectionHeader(title = "Featured Albums", modifier = Modifier.padding(horizontal = 16.dp))
-
-        LazyRow(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(MockData.albums.take(4)) { album ->
-                AlbumCard(album, onClick = {})
+        item { SectionHeader(title = "Featured Albums") }
+        item {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(MockData.albums) { album ->
+                    AlbumCard(album, onClick = {})
+                }
             }
         }
-
-        Spacer(modifier = Modifier.height(100.dp))
     }
 }
 
 // --- Screen 28: Charts ---
 @Composable
 fun ChartsScreen(
-    onSongClick: (alora.am.model.Song) -> Unit,
+    onSongClick: (Song) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundPrimary)
-            .verticalScroll(rememberScrollState())
+    val chartNames = listOf("Global Top 50", "India Top 50", "Trending Songs", "Viral Songs", "New Music Friday")
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = "Charts", style = tHeadline, color = textMain)
+        item {
+            Text(
+                text = "Charts",
+                style = tHeadline,
+                color = textMain,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        listOf("Global Top 50", "India Top 50", "Trending Songs", "Viral Songs", "New Music Friday").forEachIndexed { index, chartName ->
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                Text(text = chartName, style = tSection, color = textMain)
-                Spacer(modifier = Modifier.height(8.dp))
-
+        chartNames.forEach { chartName ->
+            item { SectionHeader(title = chartName) }
+            item {
                 LazyRow(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(MockData.songs.take(5).indexed) { (songIndex, song) ->
+                    itemsIndexed(MockData.songs.take(5)) { index, song ->
                         Column(
-                            modifier = Modifier
-                                .width(150.dp)
-                                .clickable { onSongClick(song) }
+                            modifier = Modifier.width(150.dp).clickable { onSongClick(song) }
                         ) {
                             Box(
                                 modifier = Modifier
@@ -436,45 +341,27 @@ fun ChartsScreen(
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(surfaceElevated)
                             ) {
-                                AsyncImage(
-                                    model = song.artworkUrl,
-                                    contentDescription = song.title,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                        androidx.compose.material3.Icon(
-                                            imageVector = androidx.compose.material3.Icons.Default.MusicNote,
-                                            contentDescription = null,
-                                            tint = textSecondary
-                                        )
-                                    }
-                                }
-
+                                ArtworkPlaceholder(song.artworkUrl, song.title, Modifier.fillMaxSize(), cornerRadius = 16.dp)
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.TopStart)
                                         .padding(6.dp)
-                                        .background(Color.Black.copy(alpha = 0.5f), shape = RoundedCornerShape(4.dp))
+                                        .background(Color.Black.copy(alpha = 0.55f), shape = RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
                                     Text(
-                                        text = (songIndex + 1).toString(),
+                                        text = (index + 1).toString(),
                                         style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                     )
                                 }
                             }
-
                             Spacer(modifier = Modifier.height(8.dp))
-
                             Text(text = song.title, style = tArtist, color = textMain, maxLines = 1)
                             Text(text = song.artist, style = tNavLabel, color = textSecondary, maxLines = 1)
                         }
                     }
                 }
-
-                if (index < 4) Spacer(modifier = Modifier.height(24.dp))
             }
         }
-
-        Spacer(modifier = Modifier.height(100.dp))
     }
 }

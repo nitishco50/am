@@ -2,25 +2,31 @@ package allora.am.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Backgrounds
-val BackgroundPrimary = Color(0xFF0B0B0F)
-val BackgroundSecondary = Color(0xFF15151B)
+// Backgrounds (deep aurora violet)
+val BackgroundPrimary = Color(0xFF100A24)
+val BackgroundSecondary = Color(0xFF1A1138)
 
-// Surfaces
-val SurfaceCard = Color(0xFF1C1C24)
-val SurfaceElevated = Color(0xFF25252E)
+// Surfaces (semi-translucent so the aurora glows through - glass feel)
+val SurfaceCard = Color(0xCC1C1440)
+val SurfaceElevated = Color(0xE6221A52)
 
-// Accents
-val AccentPrimary = Color(0xFFA020F0)
-val AccentSecondary = Color(0xFF7F00FF)
+// Accents - vivid music palette
+val AccentPrimary = Color(0xFFB759FF)
+val AccentSecondary = Color(0xFFF72585)
+val AccentBlue = Color(0xFF4CC9F0)
+val AccentCyan = Color(0xFF2EC4B6)
 
 // Text
 val TextMain = Color(0xFFFFFFFF)
-val TextSecondary = Color(0xFFA6A6B2)
-val TextMuted = Color(0xFF70707C)
+val TextSecondary = Color(0xFFC9C2E8)
+val TextMuted = Color(0xFF8E86B5)
 
 // Dividers
-val Divider = Color(0xFF30303A)
+val Divider = Color(0xFF352A63)
 
 // Success
-val Success = Color(0xFF38D996)
+val Success = Color(0xFF3DDC97)
+
+// Glass tokens
+val GlassWhite = Color(0x33FFFFFF)
+val GlassBorder = Color(0x66FFFFFF)

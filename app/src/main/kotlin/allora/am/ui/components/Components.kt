@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -44,6 +45,10 @@ val textSecondary = allora.am.ui.theme.TextSecondary
 val textMuted = allora.am.ui.theme.TextMuted
 val divider = allora.am.ui.theme.Divider
 val success = allora.am.ui.theme.Success
+val accentBlue = allora.am.ui.theme.AccentBlue
+val accentCyan = allora.am.ui.theme.AccentCyan
+val glassWhite = allora.am.ui.theme.GlassWhite
+val glassBorder = allora.am.ui.theme.GlassBorder
 
 val tHeadline = allora.am.ui.theme.Typography.headlineLarge
 val tSection = allora.am.ui.theme.Typography.headlineMedium
@@ -61,7 +66,22 @@ val Long.durationFormatted: String
         return "$minutes:${remainingSeconds.toString().padStart(2, '0')}"
     }
 
-// --- Placeholder artwork ---
+// --- Placeholder artwork (vivid gradient tiles) ---
+private val artworkGradients = listOf(
+    listOf(Color(0xFF8E2DE2), Color(0xFF4A00E0)),
+    listOf(Color(0xFFF72585), Color(0xFF7209B7)),
+    listOf(Color(0xFF00C6FF), Color(0xFF0072FF)),
+    listOf(Color(0xFF43E97B), Color(0xFF38F9D7)),
+    listOf(Color(0xFFFF6A88), Color(0xFF6857E0)),
+    listOf(Color(0xFFFA709A), Color(0xFFFEE140)),
+    listOf(Color(0xFF30CFD0), Color(0xFF330867)),
+    listOf(Color(0xFFFBAB7E), Color(0xFFF7CE68)),
+    listOf(Color(0xFFB5179E), Color(0xFF3A0CA3)),
+    listOf(Color(0xFF06B6D4), Color(0xFF3B82F6)),
+    listOf(Color(0xFFDA22FF), Color(0xFF9733EE)),
+    listOf(Color(0xFFFF512F), Color(0xFFDD2476)),
+)
+
 @Composable
 fun ArtworkPlaceholder(
     url: String?,
@@ -69,22 +89,31 @@ fun ArtworkPlaceholder(
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 12.dp
 ) {
+    val seed = ((url ?: contentDescription ?: "am").hashCode() % artworkGradients.size + artworkGradients.size) % artworkGradients.size
+    val colors = artworkGradients[seed]
+    val shape = RoundedCornerShape(cornerRadius)
     Box(
         modifier = modifier
-            .background(surfaceElevated)
-            .clip(RoundedCornerShape(cornerRadius)),
+            .clip(shape)
+            .background(Brush.linearGradient(colors))
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color.White.copy(alpha = 0.28f), Color.Transparent)
+                )
+            )
+            .border(0.6.dp, Color.White.copy(alpha = 0.22f), shape),
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            imageVector = Icons.Default.Album,
+            imageVector = Icons.Default.MusicNote,
             contentDescription = contentDescription,
-            tint = textSecondary,
+            tint = Color.White.copy(alpha = 0.92f),
             modifier = Modifier.size(32.dp)
         )
     }
 }
 
-// --- 1. Bottom Navigation Bar ---
+// --- 1. Floating Liquid Glass Navigation Bar ---
 @Composable
 fun BottomNavBar(
     selectedIndex: Int,
@@ -98,46 +127,108 @@ fun BottomNavBar(
         Pair("Radio", Icons.Default.Radio),
         Pair("Profile", Icons.Default.Person),
     )
+    val shape = RoundedCornerShape(28.dp)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(80.dp)
-            .background(bgPrimary)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(66.dp)
+                .shadow(
+                    elevation = 22.dp,
+                    shape = shape,
+                    ambientColor = accentPrimary.copy(alpha = 0.55f),
+                    spotColor = accentSecondary.copy(alpha = 0.55f)
+                )
+                .clip(shape)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.22f),
+                            Color.White.copy(alpha = 0.07f)
+                        )
+                    )
+                )
+                .border(
+                    width = 1.dp,
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.65f),
+                            Color.White.copy(alpha = 0.12f)
+                        )
+                    ),
+                    shape = shape
+                )
         ) {
-            items.forEachIndexed { index, (label, icon) ->
-                val isSelected = selectedIndex == index
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onTabSelected(index) }
-                        .padding(horizontal = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = label,
-                        tint = if (isSelected) accentPrimary else textMuted,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        text = label,
-                        style = tNavLabel,
-                        color = if (isSelected) accentPrimary else textMuted,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color.White.copy(alpha = 0.55f))
+            )
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items.forEachIndexed { index, (label, icon) ->
+                    val isSelected = selectedIndex == index
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clickable { onTabSelected(index) },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    if (isSelected)
+                                        Brush.linearGradient(
+                                            listOf(
+                                                accentPrimary.copy(alpha = 0.80f),
+                                                accentSecondary.copy(alpha = 0.70f)
+                                            )
+                                        )
+                                    else Brush.linearGradient(
+                                        listOf(Color.Transparent, Color.Transparent)
+                                    )
+                                )
+                                .border(
+                                    width = if (isSelected) 1.dp else 0.dp,
+                                    color = if (isSelected) Color.White.copy(alpha = 0.45f) else Color.Transparent,
+                                    shape = RoundedCornerShape(14.dp)
+                                )
+                                .padding(horizontal = 14.dp, vertical = 5.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = label,
+                                tint = if (isSelected) Color.White else textSecondary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Text(
+                            text = label,
+                            style = tNavLabel,
+                            color = if (isSelected) Color.White else textMuted,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-// --- 2. Mini Player ---
+// --- 2. Mini Player (liquid glass) ---
 @Composable
 fun MiniPlayer(
     song: Song?,
@@ -147,14 +238,39 @@ fun MiniPlayer(
     modifier: Modifier = Modifier
 ) {
     if (song == null) return
+    val shape = RoundedCornerShape(22.dp)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .background(surfaceElevated)
-            .clip(RoundedCornerShape(16.dp))
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 14.dp, vertical = 6.dp)
+            .height(66.dp)
+            .shadow(
+                elevation = 18.dp,
+                shape = shape,
+                ambientColor = accentPrimary.copy(alpha = 0.5f),
+                spotColor = accentSecondary.copy(alpha = 0.5f)
+            )
+            .clip(shape)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.18f),
+                        Color.White.copy(alpha = 0.06f)
+                    )
+                )
+            )
+            .border(
+                width = 1.dp,
+                brush = Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.5f),
+                        Color.White.copy(alpha = 0.1f)
+                    )
+                ),
+                shape = shape
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -162,11 +278,11 @@ fun MiniPlayer(
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .clickable { onExpand() }
             ) {
-                ArtworkPlaceholder(song.artworkUrl, song.title, Modifier.fillMaxSize(), cornerRadius = 8.dp)
+                ArtworkPlaceholder(song.artworkUrl, song.title, Modifier.fillMaxSize(), cornerRadius = 12.dp)
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -191,14 +307,14 @@ fun MiniPlayer(
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onPlayPause) {
-                    Icon(Icons.Default.Pause, contentDescription = "Play/Pause", tint = textMain)
+                    Icon(Icons.Default.Pause, contentDescription = "Play/Pause", tint = Color.White)
                 }
                 IconButton(onClick = onNext) {
-                    Icon(Icons.Default.SkipNext, contentDescription = "Next", tint = textMain)
+                    Icon(Icons.Default.SkipNext, contentDescription = "Next", tint = Color.White)
                 }
             }
         }

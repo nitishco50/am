@@ -3,7 +3,6 @@ package allora.am.ui.navigation
 import allora.am.data.MockData
 import allora.am.ui.components.MiniPlayer
 import allora.am.ui.components.BottomNavBar
-import allora.am.ui.components.bgPrimary
 import allora.am.ui.screens.library.*
 import allora.am.ui.screens.main.*
 import allora.am.ui.screens.onboarding.*
@@ -18,6 +17,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 private val onboardingScreens = setOf(
@@ -47,7 +48,20 @@ fun AppShell(
     val nav = navigation
     val screen = nav.currentScreen
 
-    Box(modifier = modifier.fillMaxSize().background(bgPrimary)) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        Color(0xFF2A0E52),
+                        Color(0xFF4B1A78),
+                        Color(0xFF22103F),
+                        Color(0xFF0C0620)
+                    )
+                )
+            )
+    ) {
         when (screen) {
             // Onboarding
             Screen.Splash -> SplashScreen(onFinish = { nav.navigateTo(Screen.Welcome) })

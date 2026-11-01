@@ -42,7 +42,7 @@ fun SplashScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(bgPrimary),
+            ,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -99,7 +99,7 @@ fun WelcomeScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(bgPrimary)
+            
             .verticalScroll(rememberScrollState())
     ) {
         Box(
@@ -188,7 +188,7 @@ fun MusicPreferencesScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(bgPrimary)
+            
             .verticalScroll(rememberScrollState())
     ) {
         Text(
@@ -302,7 +302,7 @@ fun SelectFavoriteArtistsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(bgPrimary)
+            
             .verticalScroll(rememberScrollState())
     ) {
         Text(
@@ -419,7 +419,7 @@ fun NotificationPermissionScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(bgPrimary)
+            
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center

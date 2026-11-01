@@ -151,7 +151,7 @@ fun EditProfileScreen(
     var bio by remember { mutableStateOf("Music lover & explorer") }
 
     Column(
-        modifier = modifier.fillMaxSize().background(bgPrimary).padding(16.dp)
+        modifier = modifier.fillMaxSize().padding(16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 16.dp),
@@ -310,7 +310,7 @@ fun AudioQualityScreen(
     var dataSaver by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier.fillMaxSize().background(bgPrimary).padding(16.dp)
+        modifier = modifier.fillMaxSize().padding(16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 16.dp),
@@ -381,7 +381,7 @@ fun EqualizerScreen(
     val levels = remember { mutableStateListOf(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f) }
 
     Column(
-        modifier = modifier.fillMaxSize().background(bgPrimary).padding(16.dp)
+        modifier = modifier.fillMaxSize().padding(16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 16.dp),
@@ -644,7 +644,7 @@ fun NotificationsScreen(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxSize().background(bgPrimary)
+        modifier = modifier.fillMaxSize()
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp),
@@ -691,7 +691,7 @@ fun HelpSupportScreen(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxSize().background(bgPrimary)
+        modifier = modifier.fillMaxSize()
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp),

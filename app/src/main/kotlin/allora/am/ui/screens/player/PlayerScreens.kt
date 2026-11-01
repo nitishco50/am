@@ -51,7 +51,7 @@ fun FullScreenPlayerScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(bgPrimary)
+            
             .padding(horizontal = 24.dp)
     ) {
         Row(
@@ -216,7 +216,7 @@ fun LyricsScreen(
     val currentLine = 3
 
     LazyColumn(
-        modifier = modifier.fillMaxSize().background(bgPrimary),
+        modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 32.dp, vertical = 24.dp)
     ) {
         item {
@@ -269,7 +269,7 @@ fun QueueScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(bgPrimary)
+            
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp),

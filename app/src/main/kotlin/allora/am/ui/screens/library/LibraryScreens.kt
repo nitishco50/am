@@ -325,7 +325,7 @@ fun CreatePlaylistScreen(
     var isPrivate by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier.fillMaxSize().background(bgPrimary).padding(16.dp)
+        modifier = modifier.fillMaxSize().padding(16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 16.dp),
@@ -434,7 +434,7 @@ fun EditPlaylistScreen(
     var description by remember { mutableStateOf("A great playlist") }
 
     Column(
-        modifier = modifier.fillMaxSize().background(bgPrimary).padding(16.dp)
+        modifier = modifier.fillMaxSize().padding(16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 16.dp),
@@ -539,7 +539,7 @@ fun AddSongsToPlaylistScreen(
     val selected = remember { mutableStateListOf<String>() }
 
     Column(
-        modifier = modifier.fillMaxSize().background(bgPrimary)
+        modifier = modifier.fillMaxSize()
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp),

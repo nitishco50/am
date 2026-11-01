@@ -1,8 +1,11 @@
 package allora.am.data
 
+import android.content.Context
 import allora.am.data.remote.ITunesApi
 import allora.am.data.remote.PipedApi
 import allora.am.model.Song
+import coil.imageLoader
+import coil.request.ImageRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -10,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Loads real YouTube Music data (keyless, via Piped) into the observable MockData
@@ -18,6 +22,7 @@ import kotlinx.coroutines.launch
 object MusicRepository {
 
     private val api = PipedApi()
+    private var appContext: Context? = null
     private val iTunes = ITunesApi()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -32,6 +37,10 @@ object MusicRepository {
     private val albumQueries = listOf("new albums 2026", "top albums", "popular albums")
     private val playlistQueries = listOf("top music playlists", "trending playlists", "best songs playlist")
 
+    fun attach(context: Context) {
+        appContext = context.applicationContext
+    }
+
     fun bootstrap() {
         if (started) return
         started = true
@@ -44,16 +53,20 @@ object MusicRepository {
                         if (index % 5 == 0) song.copy(isFavorite = true) else song
                     }
                     MockData.updateSongs(favourites)
+                    prefetchImages(favourites.mapNotNull { it.artworkUrl })
                 }
 
                 val artists = firstNonEmpty(artistQueries) { api.searchArtists(it) }
                 MockData.updateArtists(artists)
+                prefetchImages(artists.mapNotNull { it.imageUrl })
 
                 val albums = firstNonEmpty(albumQueries) { api.searchAlbums(it) }
                 MockData.updateAlbums(albums)
+                prefetchImages(albums.mapNotNull { it.artworkUrl })
 
                 val playlists = firstNonEmpty(playlistQueries) { api.searchPlaylists(it) }
                 MockData.updatePlaylists(playlists)
+                prefetchImages(playlists.mapNotNull { it.artworkUrl })
             } catch (_: Exception) {
                 // keep demo catalog
             } finally {
@@ -73,6 +86,22 @@ object MusicRepository {
     suspend fun previewUrl(song: Song): String? = iTunes.previewUrl(song.artist, song.title)
 
     suspend fun searchSongs(query: String): List<Song> = api.searchSongs(query)
+
+    suspend fun suggestions(query: String): List<String> = api.suggestions(query)
+
+    private suspend fun prefetchImages(urls: List<String>) {
+        val context = appContext ?: return
+        withContext(Dispatchers.Main) {
+            val loader = context.imageLoader
+            urls.asSequence()
+                .filter { it.startsWith("http") }
+                .distinct()
+                .take(24)
+                .forEach { url ->
+                    loader.enqueue(ImageRequest.Builder(context).data(url).build())
+                }
+        }
+    }
 
     private suspend fun <T> firstNonEmpty(
         queries: List<String>,

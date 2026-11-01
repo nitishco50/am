@@ -1,8 +1,15 @@
 package allora.am.ui.screens.player
 
 import allora.am.data.MockData
+import allora.am.playback.MusicPlayer
 import allora.am.model.Song
 import allora.am.ui.components.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,13 +24,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 
 // --- Screen 11: Full-Screen Music Player ---
 @Composable
@@ -43,15 +54,40 @@ fun FullScreenPlayerScreen(
 ) {
     if (song == null) return
 
-    var isPlaying by remember { mutableStateOf(true) }
     var isShuffle by remember { mutableStateOf(false) }
     var isRepeat by remember { mutableStateOf(false) }
-    var progress by remember { mutableFloatStateOf(0.35f) }
+    var positionMs by remember { mutableStateOf(0L) }
+    var durationMs by remember { mutableStateOf(song.durationMs) }
+
+    LaunchedEffect(song.id) {
+        while (true) {
+            positionMs = MusicPlayer.positionMs()
+            MusicPlayer.durationMs().takeIf { it > 0L }?.let { durationMs = it }
+            delay(500)
+        }
+    }
+
+    val isPlaying = MusicPlayer.isPlaying
+    val isBuffering = MusicPlayer.isBuffering
+    val progress = if (durationMs > 0L) {
+        (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
+    } else 0f
+
+    val infinite = rememberInfiniteTransition(label = "artworkBreath")
+    val breathe by infinite.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.035f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "artworkScale"
+    )
+    val artworkScale = if (isPlaying) breathe else 1f
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            
             .padding(horizontal = 24.dp)
     ) {
         Row(
@@ -77,15 +113,34 @@ fun FullScreenPlayerScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .clip(RoundedCornerShape(24.dp))
-                .background(surfaceElevated),
+                .graphicsLayer {
+                    scaleX = artworkScale
+                    scaleY = artworkScale
+                }
+                .clip(RoundedCornerShape(28.dp))
+                .background(surfaceElevated)
+                .shadow(
+                    elevation = 26.dp,
+                    shape = RoundedCornerShape(28.dp),
+                    ambientColor = accentPrimary.copy(alpha = 0.6f),
+                    spotColor = accentSecondary.copy(alpha = 0.6f)
+                ),
             contentAlignment = Alignment.Center
         ) {
-            ArtworkPlaceholder(song.artworkUrl, song.title, Modifier.fillMaxSize(), cornerRadius = 24.dp)
-            Icon(Icons.Default.Album, contentDescription = null, tint = textSecondary.copy(alpha = 0.5f), modifier = Modifier.size(96.dp))
+            ArtworkPlaceholder(song.artworkUrl, song.title, Modifier.fillMaxSize(), cornerRadius = 28.dp)
+            if (isBuffering) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.35f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color.White, strokeWidth = 3.dp)
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(30.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -104,19 +159,25 @@ fun FullScreenPlayerScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        AudioProgressSlider(progress = progress, onProgressChange = { progress = it })
+        AudioProgressSlider(
+            progress = progress,
+            onProgressChange = {
+                val target = (it * durationMs).toLong()
+                MusicPlayer.seekTo(target)
+                positionMs = target
+            }
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            val elapsed = (song.durationMs * progress).toLong().durationFormatted
-            Text(text = elapsed, style = tNavLabel, color = textMuted)
-            Text(text = song.durationFormatted, style = tNavLabel, color = textMuted)
+            Text(text = positionMs.durationFormatted, style = tNavLabel, color = textMuted)
+            Text(text = durationMs.durationFormatted, style = tNavLabel, color = textMuted)
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(22.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -135,17 +196,34 @@ fun FullScreenPlayerScreen(
             }
             Box(
                 modifier = Modifier
-                    .size(72.dp)
-                    .background(accentPrimary, shape = CircleShape)
-                    .clickable { isPlaying = !isPlaying; onPlayPause() },
+                    .size(76.dp)
+                    .shadow(
+                        elevation = 18.dp,
+                        shape = CircleShape,
+                        ambientColor = accentPrimary.copy(alpha = 0.8f),
+                        spotColor = accentSecondary.copy(alpha = 0.8f)
+                    )
+                    .background(
+                        Brush.linearGradient(listOf(accentPrimary, accentSecondary)),
+                        shape = CircleShape
+                    )
+                    .clickable { onPlayPause() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = "Play/Pause",
-                    tint = Color.White,
-                    modifier = Modifier.size(36.dp)
-                )
+                if (isBuffering) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(30.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = "Play/Pause",
+                        tint = Color.White,
+                        modifier = Modifier.size(38.dp)
+                    )
+                }
             }
             IconButton(onClick = onNext) {
                 Icon(Icons.Default.SkipNext, contentDescription = "Next", tint = textMain, modifier = Modifier.size(36.dp))
@@ -159,7 +237,7 @@ fun FullScreenPlayerScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -170,7 +248,7 @@ fun FullScreenPlayerScreen(
             SecondaryControl(Icons.Default.Share, "Share") {}
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 

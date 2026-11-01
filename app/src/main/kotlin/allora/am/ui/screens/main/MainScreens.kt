@@ -7,6 +7,7 @@ import allora.am.model.Genre
 import allora.am.model.Song
 import allora.am.ui.components.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -293,13 +294,19 @@ fun SearchScreen(
 ) {
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<Song>>(emptyList()) }
+    var suggestions by remember { mutableStateOf<List<String>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
 
     LaunchedEffect(query) {
         val trimmed = query.trim()
         if (trimmed.length >= 2) {
             searching = true
-            delay(350)
+            delay(250)
+            suggestions = try {
+                MusicRepository.suggestions(trimmed)
+            } catch (_: Exception) {
+                emptyList()
+            }
             results = try {
                 MusicRepository.searchSongs(trimmed)
             } catch (_: Exception) {
@@ -307,6 +314,7 @@ fun SearchScreen(
             }
             searching = false
         } else {
+            suggestions = emptyList()
             results = emptyList()
             searching = false
         }
@@ -323,6 +331,49 @@ fun SearchScreen(
                 onValueChange = { query = it },
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
+        }
+
+        if (query.isNotBlank() && suggestions.isNotEmpty()) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(surfaceElevated)
+                        .border(1.dp, glassBorder, RoundedCornerShape(18.dp))
+                ) {
+                    suggestions.forEach { suggestion ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { query = suggestion }
+                                .padding(horizontal = 14.dp, vertical = 11.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                                tint = textMuted,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = suggestion,
+                                style = tArtist,
+                                color = textMain,
+                                maxLines = 1
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Icon(
+                                imageVector = Icons.Default.NorthWest,
+                                contentDescription = null,
+                                tint = textMuted,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         if (query.isBlank()) {
@@ -348,8 +399,18 @@ fun SearchScreen(
             }
         } else {
             item { SectionHeader(title = if (searching) "Searching YouTube Music…" else "Songs") }
-            if (!searching && results.isEmpty()) {
-                item {
+            when {
+                searching -> item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(28.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = accentPrimary, strokeWidth = 3.dp)
+                    }
+                }
+                results.isEmpty() -> item {
                     Text(
                         text = "No results for \"$query\"",
                         style = tArtist,
@@ -357,8 +418,7 @@ fun SearchScreen(
                         modifier = Modifier.padding(16.dp)
                     )
                 }
-            } else {
-                items(results) { song ->
+                else -> items(results) { song ->
                     SongItem(song, onClick = { onSongClick(song) }, modifier = Modifier.padding(horizontal = 16.dp))
                 }
             }

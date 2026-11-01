@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
@@ -82,7 +83,7 @@ class PipedApi {
                             title = o.optString("title").ifBlank { "Unknown title" },
                             artist = o.optString("uploaderName").ifBlank { "Unknown artist" },
                             album = null,
-                            artworkUrl = absolute(o.optString("thumbnail")),
+                            artworkUrl = youtubeThumb(id),
                             durationMs = o.optLong("duration") * 1000L,
                             genre = "Music"
                         )
@@ -168,7 +169,7 @@ class PipedApi {
     /** Resolves a playable audio stream URL for a YouTube video id. */
     suspend fun audioUrl(videoId: String): String? = withContext(Dispatchers.IO) {
         if (videoId.isBlank()) return@withContext null
-        for (base in bases()) {
+        for (base in bases().take(3)) {
             val json = request(base, "/streams/$videoId") ?: continue
             val streams = json.optJSONArray("audioStreams") ?: continue
             val candidates = buildList {
@@ -188,8 +189,42 @@ class PipedApi {
         null
     }
 
+    /** Live YouTube autocomplete suggestions. */
+    suspend fun suggestions(query: String): List<String> = withContext(Dispatchers.IO) {
+        if (query.isBlank()) return@withContext emptyList()
+        val path = "/suggestions?query=${enc(query)}"
+        for (base in bases().take(3)) {
+            try {
+                val request = Request.Builder()
+                    .url(base + path)
+                    .header("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36")
+                    .build()
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val body = response.body?.string() ?: return@use
+                        if (body.isBlank()) return@use
+                        workingBase = base
+                        val array = JSONArray(body)
+                        return@withContext buildList {
+                            for (i in 0 until array.length()) {
+                                val value = array.optString(i)
+                                if (value.isNotBlank()) add(value)
+                            }
+                        }.take(8)
+                    }
+                }
+            } catch (_: Exception) {
+                // try next instance
+            }
+        }
+        emptyList()
+    }
+
     // --- helpers ---
     private fun enc(value: String): String = URLEncoder.encode(value, "UTF-8")
+
+    private fun youtubeThumb(videoId: String): String =
+        "https://i.ytimg.com/vi/$videoId/hqdefault.jpg"
 
     private val videoIdRegex = Regex("[?&]v=([A-Za-z0-9_-]{11})")
     private val listIdRegex = Regex("[?&]list=([A-Za-z0-9_-]+)")

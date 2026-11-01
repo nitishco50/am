@@ -93,6 +93,14 @@ object MusicPlayer {
         if (player.isPlaying) player.pause() else player.play()
     }
 
+    fun positionMs(): Long = exo?.currentPosition?.coerceAtLeast(0L) ?: 0L
+
+    fun durationMs(): Long = exo?.duration?.takeIf { it > 0L } ?: 0L
+
+    fun seekTo(positionMs: Long) {
+        exo?.seekTo(positionMs.coerceAtLeast(0L))
+    }
+
     fun next(context: Context) {
         val list = MockData.songs
         if (list.isEmpty()) return

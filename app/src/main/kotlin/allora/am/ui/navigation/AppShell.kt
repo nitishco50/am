@@ -12,16 +12,31 @@ import allora.am.ui.screens.onboarding.*
 import allora.am.ui.screens.player.*
 import allora.am.ui.screens.profile.*
 import allora.am.ui.screens.radio.*
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -58,6 +73,7 @@ fun AppShell(
 
     val play: (Song) -> Unit = { song ->
         nav.playSong(song)
+        nav.navigateTo(Screen.FullScreenPlayer)
         MusicPlayer.play(context, song)
     }
 
@@ -67,15 +83,24 @@ fun AppShell(
             .background(
                 Brush.linearGradient(
                     listOf(
-                        Color(0xFF2A0E52),
-                        Color(0xFF4B1A78),
-                        Color(0xFF22103F),
-                        Color(0xFF0C0620)
+                        Color(0xFF4A0E1A),
+                        Color(0xFF7A1626),
+                        Color(0xFF2A0810),
+                        Color(0xFF120406)
                     )
                 )
             )
     ) {
-        when (screen) {
+        AuroraGlow(Modifier.matchParentSize())
+        AnimatedContent(
+            targetState = screen,
+            transitionSpec = {
+                (fadeIn(tween(220)) + slideInHorizontally(initialOffsetX = { it / 12 })) togetherWith
+                    (fadeOut(tween(160)) + slideOutHorizontally(targetOffsetX = { -it / 12 }))
+            },
+            label = "screenTransition"
+        ) { target ->
+            when (target) {
             // Onboarding
             Screen.Splash -> SplashScreen(onFinish = { nav.navigateTo(Screen.Welcome) })
             Screen.Welcome -> WelcomeScreen(
@@ -228,6 +253,7 @@ fun AppShell(
                 onMoreOptions = {},
                 onFavorite = {}
             )
+            }
         }
 
         // Mini player + bottom nav on main screens
@@ -267,5 +293,43 @@ fun AppShell(
                 )
             }
         }
+    }
+}
+
+
+@Composable
+private fun AuroraGlow(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "aurora")
+    val shift by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 14000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "auroraShift"
+    )
+    Canvas(modifier = modifier) {
+        val radius = size.maxDimension * 0.85f
+        val top = Offset(size.width * (0.15f + 0.35f * shift), size.height * 0.16f)
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(Color(0x55E63946), Color.Transparent),
+                center = top,
+                radius = radius
+            ),
+            radius = radius,
+            center = top
+        )
+        val bottom = Offset(size.width * (0.9f - 0.35f * shift), size.height * 0.72f)
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(Color(0x44FF7A59), Color.Transparent),
+                center = bottom,
+                radius = radius
+            ),
+            radius = radius,
+            center = bottom
+        )
     }
 }
